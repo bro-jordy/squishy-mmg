@@ -16,7 +16,7 @@ const RECEIPT_TITLE = 'Squishy MMG'
 
 // Struk + detail transaksi. Bagian struk bisa dicetak / disimpan PDF lewat dialog
 // cetak browser (lihat @media print di styles.css); tombol-tombol tidak ikut tercetak.
-export default function SaleDialog({ sale, justSaved = false, onClose, onChanged }) {
+export default function SaleDialog({ sale, cash = null, justSaved = false, onClose, onChanged }) {
   const { api, isAdmin } = useStore()
   const [voiding, setVoiding] = useState(false)
   const [reason, setReason] = useState('')
@@ -41,6 +41,12 @@ export default function SaleDialog({ sale, justSaved = false, onClose, onChanged
   return (
     <Modal title={justSaved ? 'Transaksi tersimpan' : 'Detail transaksi'} onClose={onClose} className="receipt-dialog">
       {justSaved && <p className="notice no-print" role="status">Stok sudah dikurangi.</p>}
+      {justSaved && cash && (
+        <p className="cash-result no-print" role="status">
+          Uang diterima {formatRupiah(cash.received)}<br />
+          {cash.change === 0 ? <b>Uang pas, tanpa kembalian</b> : <>Kembalian <b>{formatRupiah(cash.change)}</b></>}
+        </p>
+      )}
 
       <article className="receipt" aria-label="Struk">
         <h3>{RECEIPT_TITLE}</h3>

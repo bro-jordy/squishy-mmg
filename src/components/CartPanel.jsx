@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../lib/store.jsx'
 import { formatRupiah } from '../lib/format'
+import { cashChange, cashSuggestions, formatDigits, parseRupiah } from '../lib/cash'
 import { newId } from '../lib/uuid'
 
 // Isi keranjang + pembayaran. Dipakai di panel kanan (layar lebar) dan di lembar bawah (HP).
@@ -10,6 +11,7 @@ export default function CartPanel({ lines, onQty, onRemove, onClose, onPaid, onS
   const [method, setMethod] = useState('cash')
   const [checked, setChecked] = useState(false) // QRIS: sudah dicek di GoPay Merchant
   const [customer, setCustomer] = useState('')
+  const [cashText, setCashText] = useState('') // uang diterima (tunai), hanya alat bantu hitung
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [qrMissing, setQrMissing] = useState(false)
@@ -23,7 +25,11 @@ export default function CartPanel({ lines, onQty, onRemove, onClose, onPaid, onS
   }, [signature])
 
   const total = lines.reduce((n, l) => n + l.qty * l.row.price, 0)
-  const canPay = lines.length > 0 && !busy && (method === 'cash' || checked)
+  // Tunai: bila uang diterima diisi tapi kurang dari total, tombol selesai ditahan.
+  // Dikosongkan = tidak menghitung kembalian (tidak wajib).
+  const received = method === 'cash' ? parseRupiah(cashText) : null
+  const cash = method === 'cash' ? cashChange(received, total) : null
+  const canPay = lines.length > 0 && !busy && (method === 'cash' ? !(cash && cash.short > 0) : checked)
 
   async function pay() {
     if (!canPay) return
@@ -37,7 +43,7 @@ export default function CartPanel({ lines, onQty, onRemove, onClose, onPaid, onS
         customerName: customer.trim(),
         items: lines.map((l) => ({ variantId: l.row.variant_id, qty: l.qty })),
       })
-      onPaid(saleId)
+      onPaid(saleId, cash && cash.short === 0 ? { received, change: cash.change } : null)
     } catch (err) {
       setError(err.message || 'Gagal menyimpan transaksi. Coba lagi.')
       setBusy(false)
@@ -83,6 +89,33 @@ export default function CartPanel({ lines, onQty, onRemove, onClose, onPaid, onS
         <button type="button" aria-pressed={method === 'cash'} onClick={() => setMethod('cash')}>Tunai</button>
         <button type="button" aria-pressed={method === 'qris'} onClick={() => setMethod('qris')}>QRIS</button>
       </div>
+
+      {method === 'cash' && lines.length > 0 && (
+        <div className="cash">
+          <label>
+            Uang diterima (Rp)
+            <input type="text" inputMode="numeric" autoComplete="off" placeholder="mis. 100.000"
+              value={formatDigits(received)} maxLength={13}
+              onChange={(e) => setCashText(e.target.value)} />
+          </label>
+          <div className="cash-quick" role="group" aria-label="Pilih nominal uang diterima">
+            <button type="button" className="small" onClick={() => setCashText(String(total))}>Uang pas</button>
+            {cashSuggestions(total).map((n) => (
+              <button type="button" className="small" key={n} onClick={() => setCashText(String(n))}>
+                {formatRupiah(n)}
+              </button>
+            ))}
+          </div>
+          {cash && cash.short > 0 && (
+            <p className="cash-short" role="alert">Uang kurang <b>{formatRupiah(cash.short)}</b></p>
+          )}
+          {cash && cash.short === 0 && (
+            <p className="cash-change" role="status" aria-live="polite">
+              {cash.change === 0 ? 'Uang pas, tidak ada kembalian' : <>Kembalian <b>{formatRupiah(cash.change)}</b></>}
+            </p>
+          )}
+        </div>
+      )}
 
       {method === 'qris' && (
         <div className="qris">

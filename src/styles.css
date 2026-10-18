@@ -281,3 +281,15 @@ ol.plain { counter-reset: n; }
 
 .empty-state { display: grid; gap: 0.25rem; margin: 0.75rem 0; }
 .empty-state p { margin: 0; }
+
+/* ---- Tunai: uang diterima & kembalian ---- */
+.cash { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 0.7rem; margin-top: 0.6rem; display: grid; gap: 0.5rem; }
+.cash label { display: grid; gap: 0.3rem; font-size: 0.9rem; }
+.cash input { font-size: 1.2rem; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.cash-quick { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.cash-quick button { min-height: 44px; padding: 0 0.8rem; font-variant-numeric: tabular-nums; }
+.cash-change { margin: 0; font-size: 1.15rem; display: flex; justify-content: space-between; align-items: baseline; }
+.cash-change b { font-size: 1.45rem; font-variant-numeric: tabular-nums; }
+.cash-short { margin: 0; padding: 0.5rem 0.7rem; border-radius: 10px; background: var(--bad-bg); color: var(--bad-ink); font-size: 1.05rem; }
+.cash-result { margin: 0.5rem 0; padding: 0.7rem 0.9rem; border-radius: 12px; background: #e4f6e8; color: #14502a; font-size: 1.05rem; text-align: center; }
+.cash-result b { font-size: 1.6rem; font-variant-numeric: tabular-nums; }

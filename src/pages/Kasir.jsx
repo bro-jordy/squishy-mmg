@@ -23,6 +23,7 @@ export default function Kasir() {
   const [lastAdded, setLastAdded] = useState('')
   const [sheetOpen, setSheetOpen] = useState(false)
   const [receipt, setReceipt] = useState(null)
+  const [cashInfo, setCashInfo] = useState(null) // uang diterima & kembalian (hanya untuk layar setelah bayar)
   const [panelKey, setPanelKey] = useState(0) // ganti = panel keranjang mulai dari kosong
 
   const load = useCallback(async () => {
@@ -80,10 +81,11 @@ export default function Kasir() {
   }
   const remove = (row) => setQty(row.variant_id, (cart[row.variant_id] ?? 0) - 1)
 
-  async function onPaid(saleId) {
+  async function onPaid(saleId, cashExtra) {
     const today = todayJakarta()
     const sales = await api.fetchSales({ from: today, to: today })
     setReceipt(sales.find((s) => s.id === saleId) ?? null)
+    setCashInfo(cashExtra ?? null)
     setCart({})
     setLastAdded('')
     setSheetOpen(false)
@@ -193,7 +195,11 @@ export default function Kasir() {
         </Modal>
       )}
 
-      {receipt && <SaleDialog sale={receipt} justSaved onClose={() => setReceipt(null)} onChanged={() => setReceipt(null)} />}
+      {receipt && (
+        <SaleDialog sale={receipt} cash={cashInfo} justSaved
+          onClose={() => { setReceipt(null); setCashInfo(null) }}
+          onChanged={() => { setReceipt(null); setCashInfo(null) }} />
+      )}
     </section>
   )
 }
