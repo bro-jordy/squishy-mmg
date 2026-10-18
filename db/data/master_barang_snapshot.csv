@@ -1,0 +1,75 @@
+sku,nama_barang,varian,warna,stock_awal,qty_stock,harga
+A23,Butter Squishy Super Soft,Vaseline,Kuning,6,5,120000
+A13,Squishy Pudding,Crunchy,Orange,12,12,50000
+A26,Squishy Fruit,Coconut Oil,Hijau,6,6,50000
+A26,Squishy Fruit,Coconut Oil,Pink,6,6,50000
+A39,Squishy Kiwi,Smooties,Putih,4,4,50000
+A39,Squishy Kiwi,Smooties,Pink,4,4,50000
+A39,Squishy Kiwi,Smooties,Biru,4,4,50000
+A29,Squishy Cheese,-,Kuning,6,4,35000
+A9,Squishy Kacang,Crunchy,Krem,6,3,50000
+A9,Squishy Kacang,Coconut Oil,Coklat,6,6,50000
+A95,Squishy Cheese Cube,Coconut Oil,Kuning,5,3,50000
+A25,Squishy Pizza Cheese,-,Kuning,12,12,35000
+A35,Squishy Soap,Crunchy,Putih,6,5,50000
+A17,Squishy Cheese Cube,-,Kuning,6,6,35000
+A12,Squishy Ice Cube,Maltose,Ungu,2,2,35000
+A12,Squishy Ice Cube,Maltose,Biru,2,2,35000
+A12,Squishy Ice Cube,Maltose,Hijau,1,1,35000
+A12,Squishy Ice Cube,Maltose,Merah,1,1,35000
+A12.1,Squishy QQ Candy,Maltose,Kuning,1,1,35000
+A12.1,Squishy QQ Candy,Maltose,Ungu,1,1,35000
+A12.1,Squishy QQ Candy,Maltose,Pink,2,2,35000
+A12.1,Squishy QQ Candy,Maltose,Biru ,2,2,35000
+A37,Squishy Gummy Bear,Maltose,Orange,2,0,35000
+A37,Squishy Gummy Bear,Maltose,Kuning,4,3,35000
+A37,Squishy Gummy Bear,Maltose,Hijau,3,3,35000
+A37,Squishy Gummy Bear,Maltose,Biru,3,1,35000
+A3.1,Squishy Cube Clear,Maltose,Biru,3,3,35000
+A3.1,Squishy Cube Clear,Maltose,Merah,3,3,35000
+A3.1,Squishy Cube Clear,Maltose,Kuning,3,3,35000
+A3.1,Squishy Cube Clear,Maltose,Ungu,2,2,35000
+A3,Squishy Cube Glitter,Maltose,Ungu,3,2,35000
+A3,Squishy Cube Glitter,Maltose,Biru,3,3,35000
+A3,Squishy Cube Glitter,Maltose,Orange,3,3,35000
+A3,Squishy Cube Glitter,Maltose,Pink,3,2,35000
+A18,Squishy Butter,-,Pink,4,4,35000
+A18,Squishy Butter,Maltose,Kuning,4,4,35000
+A18,Squishy Butter,-,Kuning,4,4,35000
+A33,Squishy Coklat - Sneakers,-,-,1,1,40000
+A33,Squishy Coklat - Kit Kat,-,-,1,1,40000
+A33,Squishy Coklat - Hersey,-,-,1,1,40000
+A33,Squishy Coklat - KKUNKK,-,-,1,1,40000
+A33,Squishy Coklat - Reeses,-,-,1,1,40000
+A33,Squishy Coklat - Bar,-,-,1,1,40000
+A19,Squishy Butter Square,-,Kuning,6,6,50000
+A19,Squishy Butter Square,-,Pink,6,6,50000
+A15,Squishy Butter - Big,-,Kuning,6,6,75000
+A15,Squishy Butter - Big,-,Kuning Muda,6,6,75000
+A1,Squishy Roti,Croissant,-,9,9,22000
+A1,Squishy Roti,Beruang,-,9,8,22000
+A1,Squishy Roti,Bunga,-,3,3,22000
+A1,Squishy Roti,Bun,-,6,6,22000
+A1,Squishy Roti,Creaker,-,3,2,22000
+A1,Squishy Roti,Spiral,-,3,3,22000
+A1,Squishy Roti,Paw,-,3,3,22000
+A1,Squishy Roti,Hotdog,-,3,3,22000
+A1,Squishy Roti,Roti Sobek,-,3,3,22000
+A1,Squishy Roti,Love,-,6,6,22000
+A1,Squishy Roti,Soes,-,3,3,22000
+A1,Squishy Roti,Donat,-,3,3,22000
+A1,Squishy Roti,Kenari,-,3,3,22000
+A1,Squishy Roti,Spiral,-,3,3,22000
+A22,Squishy Toothpaste - Glitter,Maltose,Ungu,3,1,35000
+A22,Squishy Toothpaste - Glitter,Maltose,Pink,3,1,35000
+A22,Squishy Toothpaste - Glitter,Maltose,Pearl,3,2,35000
+A22.1,Squishy Toothpaste - Clear,Maltose,Clear,3,3,35000
+A22.1,Squishy Toothpaste - Clear,Maltose,Ungu,3,3,35000
+A22.1,Squishy Toothpaste - Clear,Maltose,Biru,3,3,35000
+A22.1,Squishy Toothpaste - Clear,Maltose,Merah,3,3,35000
+A22.1,Squishy Toothpaste - Clear,Maltose,Pink,3,3,35000
+A27,Squishy Dumpling Mini,-,-,120,114,5000
+A88,Squishy Face DIY,Clay,Ungu,1,1,120000
+A88,Squishy Face DIY,Clay,Putih,1,1,120000
+A88,Squishy Face DIY,Clay,Pink,1,0,120000
+A40,Squishy Manggo,Crunchy,Kuning,6,6,50000

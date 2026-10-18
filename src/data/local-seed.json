@@ -1,0 +1,777 @@
+{
+ "stores": [
+  {
+   "id": "s1",
+   "kode": "REA",
+   "nama": "Toko Rea"
+  },
+  {
+   "id": "s2",
+   "kode": "SOSO",
+   "nama": "Toko Soso"
+  }
+ ],
+ "products": [
+  {
+   "id": "p1",
+   "sku": "A23",
+   "name": "Butter Squishy Super Soft",
+   "price": 120000,
+   "is_active": true
+  },
+  {
+   "id": "p2",
+   "sku": "A13",
+   "name": "Squishy Pudding",
+   "price": 50000,
+   "is_active": true
+  },
+  {
+   "id": "p3",
+   "sku": "A26",
+   "name": "Squishy Fruit",
+   "price": 50000,
+   "is_active": true
+  },
+  {
+   "id": "p4",
+   "sku": "A39",
+   "name": "Squishy Kiwi",
+   "price": 50000,
+   "is_active": true
+  },
+  {
+   "id": "p5",
+   "sku": "A29",
+   "name": "Squishy Cheese",
+   "price": 35000,
+   "is_active": true
+  },
+  {
+   "id": "p6",
+   "sku": "A9",
+   "name": "Squishy Kacang",
+   "price": 50000,
+   "is_active": true
+  },
+  {
+   "id": "p7",
+   "sku": "A95",
+   "name": "Squishy Cheese Cube",
+   "price": 50000,
+   "is_active": true
+  },
+  {
+   "id": "p8",
+   "sku": "A25",
+   "name": "Squishy Pizza Cheese",
+   "price": 35000,
+   "is_active": true
+  },
+  {
+   "id": "p9",
+   "sku": "A35",
+   "name": "Squishy Soap",
+   "price": 50000,
+   "is_active": true
+  },
+  {
+   "id": "p10",
+   "sku": "A17",
+   "name": "Squishy Cheese Cube",
+   "price": 35000,
+   "is_active": true
+  },
+  {
+   "id": "p11",
+   "sku": "A12",
+   "name": "Squishy Ice Cube",
+   "price": 35000,
+   "is_active": true
+  },
+  {
+   "id": "p12",
+   "sku": "A12.1",
+   "name": "Squishy QQ Candy",
+   "price": 35000,
+   "is_active": true
+  },
+  {
+   "id": "p13",
+   "sku": "A37",
+   "name": "Squishy Gummy Bear",
+   "price": 35000,
+   "is_active": true
+  },
+  {
+   "id": "p14",
+   "sku": "A3.1",
+   "name": "Squishy Cube Clear",
+   "price": 35000,
+   "is_active": true
+  },
+  {
+   "id": "p15",
+   "sku": "A3",
+   "name": "Squishy Cube Glitter",
+   "price": 35000,
+   "is_active": true
+  },
+  {
+   "id": "p16",
+   "sku": "A18",
+   "name": "Squishy Butter",
+   "price": 35000,
+   "is_active": true
+  },
+  {
+   "id": "p17",
+   "sku": "A33",
+   "name": "Squishy Coklat",
+   "price": 40000,
+   "is_active": true
+  },
+  {
+   "id": "p18",
+   "sku": "A19",
+   "name": "Squishy Butter Square",
+   "price": 50000,
+   "is_active": true
+  },
+  {
+   "id": "p19",
+   "sku": "A15",
+   "name": "Squishy Butter - Big",
+   "price": 75000,
+   "is_active": true
+  },
+  {
+   "id": "p20",
+   "sku": "A1",
+   "name": "Squishy Roti",
+   "price": 22000,
+   "is_active": true
+  },
+  {
+   "id": "p21",
+   "sku": "A22",
+   "name": "Squishy Toothpaste - Glitter",
+   "price": 35000,
+   "is_active": true
+  },
+  {
+   "id": "p22",
+   "sku": "A22.1",
+   "name": "Squishy Toothpaste - Clear",
+   "price": 35000,
+   "is_active": true
+  },
+  {
+   "id": "p23",
+   "sku": "A27",
+   "name": "Squishy Dumpling Mini",
+   "price": 5000,
+   "is_active": true
+  },
+  {
+   "id": "p24",
+   "sku": "A88",
+   "name": "Squishy Face DIY",
+   "price": 120000,
+   "is_active": true
+  },
+  {
+   "id": "p25",
+   "sku": "A40",
+   "name": "Squishy Manggo",
+   "price": 50000,
+   "is_active": true
+  }
+ ],
+ "variants": [
+  {
+   "id": "v1",
+   "product_id": "p1",
+   "varian": "Vaseline",
+   "warna": "Kuning",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v2",
+   "product_id": "p2",
+   "varian": "Crunchy",
+   "warna": "Orange",
+   "stock": 12,
+   "is_active": true
+  },
+  {
+   "id": "v3",
+   "product_id": "p3",
+   "varian": "Coconut Oil",
+   "warna": "Hijau",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v4",
+   "product_id": "p3",
+   "varian": "Coconut Oil",
+   "warna": "Pink",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v5",
+   "product_id": "p4",
+   "varian": "Smooties",
+   "warna": "Putih",
+   "stock": 4,
+   "is_active": true
+  },
+  {
+   "id": "v6",
+   "product_id": "p4",
+   "varian": "Smooties",
+   "warna": "Pink",
+   "stock": 4,
+   "is_active": true
+  },
+  {
+   "id": "v7",
+   "product_id": "p4",
+   "varian": "Smooties",
+   "warna": "Biru",
+   "stock": 4,
+   "is_active": true
+  },
+  {
+   "id": "v8",
+   "product_id": "p5",
+   "varian": null,
+   "warna": "Kuning",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v9",
+   "product_id": "p6",
+   "varian": "Crunchy",
+   "warna": "Krem",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v10",
+   "product_id": "p6",
+   "varian": "Coconut Oil",
+   "warna": "Coklat",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v11",
+   "product_id": "p7",
+   "varian": "Coconut Oil",
+   "warna": "Kuning",
+   "stock": 5,
+   "is_active": true
+  },
+  {
+   "id": "v12",
+   "product_id": "p8",
+   "varian": null,
+   "warna": "Kuning",
+   "stock": 12,
+   "is_active": true
+  },
+  {
+   "id": "v13",
+   "product_id": "p9",
+   "varian": "Crunchy",
+   "warna": "Putih",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v14",
+   "product_id": "p10",
+   "varian": null,
+   "warna": "Kuning",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v15",
+   "product_id": "p11",
+   "varian": "Maltose",
+   "warna": "Ungu",
+   "stock": 2,
+   "is_active": true
+  },
+  {
+   "id": "v16",
+   "product_id": "p11",
+   "varian": "Maltose",
+   "warna": "Biru",
+   "stock": 2,
+   "is_active": true
+  },
+  {
+   "id": "v17",
+   "product_id": "p11",
+   "varian": "Maltose",
+   "warna": "Hijau",
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v18",
+   "product_id": "p11",
+   "varian": "Maltose",
+   "warna": "Merah",
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v19",
+   "product_id": "p12",
+   "varian": "Maltose",
+   "warna": "Kuning",
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v20",
+   "product_id": "p12",
+   "varian": "Maltose",
+   "warna": "Ungu",
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v21",
+   "product_id": "p12",
+   "varian": "Maltose",
+   "warna": "Pink",
+   "stock": 2,
+   "is_active": true
+  },
+  {
+   "id": "v22",
+   "product_id": "p12",
+   "varian": "Maltose",
+   "warna": "Biru",
+   "stock": 2,
+   "is_active": true
+  },
+  {
+   "id": "v23",
+   "product_id": "p13",
+   "varian": "Maltose",
+   "warna": "Orange",
+   "stock": 2,
+   "is_active": true
+  },
+  {
+   "id": "v24",
+   "product_id": "p13",
+   "varian": "Maltose",
+   "warna": "Kuning",
+   "stock": 4,
+   "is_active": true
+  },
+  {
+   "id": "v25",
+   "product_id": "p13",
+   "varian": "Maltose",
+   "warna": "Hijau",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v26",
+   "product_id": "p13",
+   "varian": "Maltose",
+   "warna": "Biru",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v27",
+   "product_id": "p14",
+   "varian": "Maltose",
+   "warna": "Biru",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v28",
+   "product_id": "p14",
+   "varian": "Maltose",
+   "warna": "Merah",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v29",
+   "product_id": "p14",
+   "varian": "Maltose",
+   "warna": "Kuning",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v30",
+   "product_id": "p14",
+   "varian": "Maltose",
+   "warna": "Ungu",
+   "stock": 2,
+   "is_active": true
+  },
+  {
+   "id": "v31",
+   "product_id": "p15",
+   "varian": "Maltose",
+   "warna": "Ungu",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v32",
+   "product_id": "p15",
+   "varian": "Maltose",
+   "warna": "Biru",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v33",
+   "product_id": "p15",
+   "varian": "Maltose",
+   "warna": "Orange",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v34",
+   "product_id": "p15",
+   "varian": "Maltose",
+   "warna": "Pink",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v35",
+   "product_id": "p16",
+   "varian": null,
+   "warna": "Pink",
+   "stock": 4,
+   "is_active": true
+  },
+  {
+   "id": "v36",
+   "product_id": "p16",
+   "varian": "Maltose",
+   "warna": "Kuning",
+   "stock": 4,
+   "is_active": true
+  },
+  {
+   "id": "v37",
+   "product_id": "p16",
+   "varian": null,
+   "warna": "Kuning",
+   "stock": 4,
+   "is_active": true
+  },
+  {
+   "id": "v38",
+   "product_id": "p17",
+   "varian": "Sneakers",
+   "warna": null,
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v39",
+   "product_id": "p17",
+   "varian": "Kit Kat",
+   "warna": null,
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v40",
+   "product_id": "p17",
+   "varian": "Hersey",
+   "warna": null,
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v41",
+   "product_id": "p17",
+   "varian": "KKUNKK",
+   "warna": null,
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v42",
+   "product_id": "p17",
+   "varian": "Reeses",
+   "warna": null,
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v43",
+   "product_id": "p17",
+   "varian": "Bar",
+   "warna": null,
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v44",
+   "product_id": "p18",
+   "varian": null,
+   "warna": "Kuning",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v45",
+   "product_id": "p18",
+   "varian": null,
+   "warna": "Pink",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v46",
+   "product_id": "p19",
+   "varian": null,
+   "warna": "Kuning",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v47",
+   "product_id": "p19",
+   "varian": null,
+   "warna": "Kuning Muda",
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v48",
+   "product_id": "p20",
+   "varian": "Croissant",
+   "warna": null,
+   "stock": 9,
+   "is_active": true
+  },
+  {
+   "id": "v49",
+   "product_id": "p20",
+   "varian": "Beruang",
+   "warna": null,
+   "stock": 9,
+   "is_active": true
+  },
+  {
+   "id": "v50",
+   "product_id": "p20",
+   "varian": "Bunga",
+   "warna": null,
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v51",
+   "product_id": "p20",
+   "varian": "Bun",
+   "warna": null,
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v52",
+   "product_id": "p20",
+   "varian": "Creaker",
+   "warna": null,
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v53",
+   "product_id": "p20",
+   "varian": "Spiral",
+   "warna": null,
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v54",
+   "product_id": "p20",
+   "varian": "Paw",
+   "warna": null,
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v55",
+   "product_id": "p20",
+   "varian": "Hotdog",
+   "warna": null,
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v56",
+   "product_id": "p20",
+   "varian": "Roti Sobek",
+   "warna": null,
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v57",
+   "product_id": "p20",
+   "varian": "Love",
+   "warna": null,
+   "stock": 6,
+   "is_active": true
+  },
+  {
+   "id": "v58",
+   "product_id": "p20",
+   "varian": "Soes",
+   "warna": null,
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v59",
+   "product_id": "p20",
+   "varian": "Donat",
+   "warna": null,
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v60",
+   "product_id": "p20",
+   "varian": "Kenari",
+   "warna": null,
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v61",
+   "product_id": "p21",
+   "varian": "Maltose",
+   "warna": "Ungu",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v62",
+   "product_id": "p21",
+   "varian": "Maltose",
+   "warna": "Pink",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v63",
+   "product_id": "p21",
+   "varian": "Maltose",
+   "warna": "Pearl",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v64",
+   "product_id": "p22",
+   "varian": "Maltose",
+   "warna": "Clear",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v65",
+   "product_id": "p22",
+   "varian": "Maltose",
+   "warna": "Ungu",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v66",
+   "product_id": "p22",
+   "varian": "Maltose",
+   "warna": "Biru",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v67",
+   "product_id": "p22",
+   "varian": "Maltose",
+   "warna": "Merah",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v68",
+   "product_id": "p22",
+   "varian": "Maltose",
+   "warna": "Pink",
+   "stock": 3,
+   "is_active": true
+  },
+  {
+   "id": "v69",
+   "product_id": "p23",
+   "varian": null,
+   "warna": null,
+   "stock": 120,
+   "is_active": true
+  },
+  {
+   "id": "v70",
+   "product_id": "p24",
+   "varian": "Clay",
+   "warna": "Ungu",
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v71",
+   "product_id": "p24",
+   "varian": "Clay",
+   "warna": "Putih",
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v72",
+   "product_id": "p24",
+   "varian": "Clay",
+   "warna": "Pink",
+   "stock": 1,
+   "is_active": true
+  },
+  {
+   "id": "v73",
+   "product_id": "p25",
+   "varian": "Crunchy",
+   "warna": "Kuning",
+   "stock": 6,
+   "is_active": true
+  }
+ ]
+}
