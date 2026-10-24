@@ -140,12 +140,23 @@ button.danger-outline { color: #b3261e; border-color: #b3261e; }
 .receipt-meta { margin: 0.4rem 0; }
 .receipt-thanks { text-align: center; margin: 0.6rem 0 0; }
 
+/* Printer struk 58 mm (kertas 54 mm): lewat dialog cetak Android / NokoPrint. */
+@page { size: 54mm auto; margin: 0; }
+
 @media print {
-  body * { visibility: hidden; }
-  .receipt-dialog, .receipt-dialog .receipt, .receipt-dialog .receipt * { visibility: visible; }
-  .receipt-dialog { position: absolute; inset: 0 auto auto 0; width: 100%; max-height: none; margin: 0; padding: 0; border: 0; box-shadow: none; background: #fff; }
+  html, body { height: auto; margin: 0; padding: 0; background: #fff; }
+  /* Sembunyikan semua selain struk (display:none, bukan visibility, supaya tidak menyisakan halaman kosong) */
+  #root :not(.receipt-dialog):not(.receipt-dialog *):not(:has(.receipt-dialog)) { display: none !important; }
+  .receipt-dialog { position: absolute; inset: 0 auto auto 0; width: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; box-shadow: none; background: #fff; overflow: visible; }
+  .receipt-dialog::backdrop { display: none; }
   .receipt-dialog h2 { display: none; }
-  .receipt { border: 0; max-width: 80mm; margin: 0; }
+  .receipt { width: 100%; max-width: none; margin: 0; padding: 0 3mm; border: 0; border-radius: 0; font-size: 11px; line-height: 1.35; break-inside: avoid; }
+  .receipt h3 { font-size: 13px; }
+  /* Satu barang = nama, rincian, lalu subtotal rata kanan (kolom sempit tidak bertabrakan) */
+  .receipt tbody tr, .receipt tbody td { display: block; width: 100%; }
+  .receipt tbody tr { margin-bottom: 0.3rem; }
+  .receipt tbody td.num { text-align: right; }
+  .receipt tfoot tr { display: flex; justify-content: space-between; }
   .no-print { display: none !important; }
 }
 
