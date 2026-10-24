@@ -131,12 +131,12 @@ button.danger-outline { color: #b3261e; border-color: #b3261e; }
 .badge.st-void { background: var(--bad-bg); color: var(--bad-ink); }
 
 /* ---- Struk ---- */
-.receipt { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85rem; max-width: 340px; margin: 0.5rem auto; padding: 0.75rem; border: 1px dashed var(--line); border-radius: 8px; background: #fff; color: #111; }
+.receipt { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85rem; width: 32ch; max-width: 100%; box-sizing: content-box; margin: 0.5rem auto; padding: 0.75rem; border: 1px dashed var(--line); border-radius: 8px; background: #fff; color: #111; }
 .receipt h3 { text-align: center; margin: 0 0 0.4rem; padding-bottom: 0.35rem; font-size: 1.05rem; border-bottom: 1px dashed #111; }
 .receipt h3 + .receipt-meta { margin: 0 0 0.4rem; padding-bottom: 0.4rem; border-bottom: 1px dashed #111; }
 .receipt table { width: 100%; border-collapse: collapse; margin: 0.4rem 0; }
 .receipt td, .receipt th { padding: 0.2rem 0; vertical-align: top; text-align: left; }
-.receipt .num { text-align: right; white-space: nowrap; }
+.receipt .num { text-align: right; white-space: nowrap; padding-left: 1ch; }
 .receipt tfoot th { border-top: 1px dashed #111; padding-top: 0.4rem; }
 .receipt-meta { margin: 0.4rem 0; }
 .receipt-thanks { text-align: center; margin: 0.6rem 0 0; }
@@ -151,16 +151,15 @@ button.danger-outline { color: #b3261e; border-color: #b3261e; }
   .receipt-dialog { position: absolute; inset: 0 auto auto 0; width: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; box-shadow: none; background: #fff; overflow: visible; }
   .receipt-dialog::backdrop { display: none; }
   .receipt-dialog h2 { display: none; }
-  .receipt { width: 100%; max-width: none; margin: 0; padding: 0 3mm; border: 0; border-radius: 0; font-size: 9px; line-height: 1.35; break-inside: avoid; }
+  .receipt { width: 32ch; max-width: none; margin: 0 auto; padding: 0 2mm; border: 0; border-radius: 0; font-size: 9px; line-height: 1.35; break-inside: avoid; }
   .receipt h3 { font-size: 11px; }
   .receipt small { font-size: 8px; }
-  /* Satu barang = nama, rincian, lalu subtotal rata kanan (kolom sempit tidak bertabrakan) */
-  .receipt tbody tr, .receipt tbody td { display: block; width: 100%; }
-  .receipt tbody tr { margin-bottom: 0.3rem; break-inside: avoid; }
+  /* Satu barang = satu baris (nama kiri, subtotal kanan); rincian di bawah nama. Lebar 32ch sama dengan preview di layar */
+  .receipt tbody tr { display: flex; justify-content: space-between; margin-bottom: 0.3rem; break-inside: avoid; }
+  .receipt tbody td { display: block; }
+  .receipt tbody td.num { flex: none; }
   /* tfoot bawaan tabel diulang di tiap halaman cetak (Total dobel); jadikan blok biasa */
   .receipt table, .receipt tbody, .receipt tfoot { display: block; }
-  .receipt tbody td.num { text-align: right; }
-  /* garis di baris, bukan di sel, supaya satu garis utuh */
   .receipt tfoot tr { display: flex; justify-content: space-between; border-top: 1px dashed #111; padding-top: 0.3rem; }
   .receipt tfoot th { border-top: 0; padding-top: 0; }
   .no-print { display: none !important; }
