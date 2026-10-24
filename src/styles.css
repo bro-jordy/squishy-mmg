@@ -156,7 +156,9 @@ button.danger-outline { color: #b3261e; border-color: #b3261e; }
   .receipt small { font-size: 8px; }
   /* Satu barang = nama, rincian, lalu subtotal rata kanan (kolom sempit tidak bertabrakan) */
   .receipt tbody tr, .receipt tbody td { display: block; width: 100%; }
-  .receipt tbody tr { margin-bottom: 0.3rem; }
+  .receipt tbody tr { margin-bottom: 0.3rem; break-inside: avoid; }
+  /* tfoot bawaan tabel diulang di tiap halaman cetak (Total dobel); jadikan blok biasa */
+  .receipt table, .receipt tbody, .receipt tfoot { display: block; }
   .receipt tbody td.num { text-align: right; }
   /* garis di baris, bukan di sel, supaya satu garis utuh */
   .receipt tfoot tr { display: flex; justify-content: space-between; border-top: 1px dashed #111; padding-top: 0.3rem; }
