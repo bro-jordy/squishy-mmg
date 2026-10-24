@@ -132,7 +132,8 @@ button.danger-outline { color: #b3261e; border-color: #b3261e; }
 
 /* ---- Struk ---- */
 .receipt { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85rem; max-width: 340px; margin: 0.5rem auto; padding: 0.75rem; border: 1px dashed var(--line); border-radius: 8px; background: #fff; color: #111; }
-.receipt h3 { text-align: center; margin: 0 0 0.4rem; font-size: 1.05rem; }
+.receipt h3 { text-align: center; margin: 0 0 0.4rem; padding-bottom: 0.35rem; font-size: 1.05rem; border-bottom: 1px dashed #111; }
+.receipt h3 + .receipt-meta { margin: 0 0 0.4rem; padding-bottom: 0.4rem; border-bottom: 1px dashed #111; }
 .receipt table { width: 100%; border-collapse: collapse; margin: 0.4rem 0; }
 .receipt td, .receipt th { padding: 0.2rem 0; vertical-align: top; text-align: left; }
 .receipt .num { text-align: right; white-space: nowrap; }
@@ -150,13 +151,16 @@ button.danger-outline { color: #b3261e; border-color: #b3261e; }
   .receipt-dialog { position: absolute; inset: 0 auto auto 0; width: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; box-shadow: none; background: #fff; overflow: visible; }
   .receipt-dialog::backdrop { display: none; }
   .receipt-dialog h2 { display: none; }
-  .receipt { width: 100%; max-width: none; margin: 0; padding: 0 3mm; border: 0; border-radius: 0; font-size: 11px; line-height: 1.35; break-inside: avoid; }
-  .receipt h3 { font-size: 13px; }
+  .receipt { width: 100%; max-width: none; margin: 0; padding: 0 3mm; border: 0; border-radius: 0; font-size: 9px; line-height: 1.35; break-inside: avoid; }
+  .receipt h3 { font-size: 11px; }
+  .receipt small { font-size: 8px; }
   /* Satu barang = nama, rincian, lalu subtotal rata kanan (kolom sempit tidak bertabrakan) */
   .receipt tbody tr, .receipt tbody td { display: block; width: 100%; }
   .receipt tbody tr { margin-bottom: 0.3rem; }
   .receipt tbody td.num { text-align: right; }
-  .receipt tfoot tr { display: flex; justify-content: space-between; }
+  /* garis di baris, bukan di sel, supaya satu garis utuh */
+  .receipt tfoot tr { display: flex; justify-content: space-between; border-top: 1px dashed #111; padding-top: 0.3rem; }
+  .receipt tfoot th { border-top: 0; padding-top: 0; }
   .no-print { display: none !important; }
 }
 
