@@ -2,17 +2,22 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useStore } from '../lib/store.jsx'
 import { formatDateJakarta, formatRupiah, formatTimeJakarta, todayJakarta } from '../lib/format'
 import SaleDialog, { saleStatus } from '../components/SaleDialog.jsx'
+import EditSaleDialog from '../components/EditSaleDialog.jsx'
+import { filterByPayment } from '../lib/salesLogic'
 
 const METHOD = { cash: 'Tunai', qris: 'QRIS' }
+const METHOD_FILTERS = [['all', 'Semua'], ['qris', 'QRIS'], ['cash', 'Tunai']]
 
 export default function Transaksi() {
-  const { api, isAdmin } = useStore()
+  const { api, isAdmin, isPlatformOwner } = useStore()
   const [from, setFrom] = useState(todayJakarta())
   const [to, setTo] = useState(todayJakarta())
   const [query, setQuery] = useState('')
   const [sales, setSales] = useState(null)
   const [error, setError] = useState('')
+  const [method, setMethod] = useState('all')
   const [selected, setSelected] = useState(null)
+  const [editing, setEditing] = useState(null)
   const [notice, setNotice] = useState('')
 
   const load = useCallback(async () => {
@@ -31,11 +36,12 @@ export default function Transaksi() {
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return sales ?? []
-    return (sales ?? []).filter((s) =>
+    const byMethod = filterByPayment(sales ?? [], method)
+    if (!q) return byMethod
+    return byMethod.filter((s) =>
       [s.sale_no, s.customer_name ?? '', s.cashier_name ?? '', ...s.sale_items.map((i) => `${i.product_name} ${i.variant_label} ${i.sku}`)]
         .join(' ').toLowerCase().includes(q))
-  }, [sales, query])
+  }, [sales, query, method])
 
   // Hanya transaksi selesai & pembayaran terkonfirmasi yang dihitung sebagai penjualan.
   const counted = shown.filter((s) => s.status === 'completed' && s.payment_status === 'confirmed')
@@ -50,6 +56,11 @@ export default function Transaksi() {
         <label>Dari<input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></label>
         <label>Sampai<input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></label>
       </div>
+      <div className="segmented" role="group" aria-label="Metode pembayaran">
+        {METHOD_FILTERS.map(([key, label]) => (
+          <button key={key} type="button" aria-pressed={method === key} onClick={() => setMethod(key)}>{label}</button>
+        ))}
+      </div>
       <input className="search" type="search" placeholder="Cari no. transaksi, pembeli, kasir, atau barang"
         aria-label="Cari transaksi" value={query} onChange={(e) => setQuery(e.target.value)} />
 
@@ -59,7 +70,7 @@ export default function Transaksi() {
         <>
           <p className="muted">
             {formatDateJakarta(from)}{from !== to && ` – ${formatDateJakarta(to)}`} ·{' '}
-            {counted.length} transaksi selesai · <b>{formatRupiah(sum)}</b>
+            {method !== 'all' && `${METHOD[method]} · `}{counted.length} transaksi selesai · <b>{formatRupiah(sum)}</b>
           </p>
           {shown.length === 0 && <p className="muted">Belum ada transaksi.</p>}
           <ul className="sales">
@@ -93,7 +104,16 @@ export default function Transaksi() {
         <SaleDialog
           sale={selected}
           onClose={() => setSelected(null)}
+          onEdit={isPlatformOwner ? () => { setEditing(selected); setSelected(null) } : undefined}
           onChanged={(msg) => { setSelected(null); setNotice(msg); load() }}
+        />
+      )}
+
+      {editing && (
+        <EditSaleDialog
+          sale={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(msg) => { setEditing(null); setNotice(msg); load() }}
         />
       )}
     </section>

@@ -309,3 +309,13 @@ ol.plain { counter-reset: n; }
 .cash-short { margin: 0; padding: 0.5rem 0.7rem; border-radius: 10px; background: var(--bad-bg); color: var(--bad-ink); font-size: 1.05rem; }
 .cash-result { margin: 0.5rem 0; padding: 0.7rem 0.9rem; border-radius: 12px; background: #e4f6e8; color: #14502a; font-size: 1.05rem; text-align: center; }
 .cash-result b { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+
+/* ---- Edit transaksi (owner) ---- */
+.edit-method { border: 0; padding: 0; margin: 0; }
+.edit-method legend { font-size: 0.9rem; padding: 0; }
+.check { display: flex !important; grid-template-columns: none; align-items: center; gap: 0.5rem; }
+.check input { width: auto; min-height: 0; }
+.edit-items { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; }
+.edit-row { display: grid; grid-template-columns: 4.5rem 1fr auto; gap: 0.5rem; align-items: end; margin-top: 0.25rem; }
+.edit-total { margin: 0; text-align: right; }
+.dialog select { min-height: 44px; padding: 0 0.5rem; border-radius: 10px; border: 1px solid var(--line); width: 100%; background: var(--surface); color: inherit; font: inherit; }

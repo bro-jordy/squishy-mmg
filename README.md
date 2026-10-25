@@ -18,6 +18,8 @@ mengubah data Toko Rea, sekalipun memanggil API langsung.
 | **Admin toko** (Rea, Soso) | Semua menu di **tokonya saja**: Dashboard, Kasir, Transaksi, Barang (Master Barang, Stok Barang, Opname massal), Bagi Hasil, Pengaturan (Umum, Pengguna). Mengelola kasir tokonya. |
 | **Kasir** | Hanya **Kasir** dan **Transaksi** (hanya transaksi yang ia buat sendiri). |
 
+**Edit transaksi selesai**: hanya **owner platform** (tombol *Edit* di detail transaksi). Bisa mengganti metode bayar (QRIS/Tunai), qty, harga satuan, dan menambah/menghapus barang; total dihitung ulang, selisih stok dicatat sebagai penyesuaian, dan tiap edit tersimpan (sebelum/sesudah, siapa, alasan) di tabel `sale_edits`. Transaksi void tidak bisa diedit. Edit ikut mengubah rekap Bagi Hasil.
+
 Nama kasir tercatat di tiap transaksi (berdasarkan akun yang login) dan tampil di Transaksi,
 tapi **tidak** di struk.
 
@@ -48,7 +50,7 @@ lunas hanya setelah kasir mencentang bahwa dana sudah masuk di GoPay Merchant (t
 ## Pasang dengan Supabase + Vercel
 
 1. **Supabase**: buat project. Di SQL Editor jalankan `db/schema.sql`, lalu `db/seed.sql`
-   (membuat kedua toko beserta master barangnya).
+   (membuat kedua toko beserta master barangnya). `schema.sql` sudah memuat semua migrasi; untuk database yang sudah berjalan, jalankan file di `db/migrations/` yang belum pernah dijalankan (aman diulang).
 2. **Matikan pendaftaran publik**: Authentication → Sign In / Providers → matikan "Allow new users to sign up".
 3. **Buat login**: Authentication → Users → Add user (email + password) untuk owner, Rea, Soso.
    Lalu edit email di `db/setup_owner.sql` dan jalankan: itu menjadikan owner sebagai owner platform

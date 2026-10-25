@@ -269,6 +269,24 @@ export function createApi({ store, user, role, isPlatformOwner = false }) {
       if (error) throw dbError(error)
     },
 
+    // Edit transaksi selesai: HANYA owner platform. items: [{ variantId, qty, unitPrice }].
+    // Total dihitung ulang; stok disesuaikan; tiap edit tercatat (sebelum/sesudah) di database.
+    async editSale({ saleId, paymentMethod, paymentConfirmed, items, reason }) {
+      if (LOCAL_MODE) {
+        if (!isPlatformOwner) throw new Error('Hanya owner yang boleh mengedit transaksi')
+        await mutateLocal(storeId, (s) => salesLogic.editSale(s, { saleId, paymentMethod, paymentConfirmed, items, reason }))
+        return
+      }
+      const { error } = await supabase.rpc('edit_sale', {
+        p_sale_id: saleId,
+        p_payment_method: paymentMethod,
+        p_payment_confirmed: Boolean(paymentConfirmed),
+        p_items: items.map((i) => ({ variant_id: i.variantId, qty: i.qty, unit_price: i.unitPrice })),
+        p_reason: reason,
+      })
+      if (error) throw dbError(error)
+    },
+
     // ---- Rekap & setoran (admin toko) ----
     // Pengaturan pembagian toko. Hanya dibaca; mengubah persen menghitung ulang SELURUH
     // riwayat toko itu, jadi sengaja tidak ada tombol ubah di aplikasi.
@@ -379,7 +397,7 @@ export function createApi({ store, user, role, isPlatformOwner = false }) {
 
 const SALE_COLUMNS =
   'id, sale_no, sold_at, customer_name, payment_method, payment_status, status, total, note, ' +
-  'void_reason, voided_at, voided_by_name, cashier_name, ' +
+  'void_reason, voided_at, voided_by_name, cashier_name, edited_at, ' +
   'sale_items(id, variant_id, qty, unit_price, line_total, sku, product_name, variant_label)'
 
 export function resetLocalData() {

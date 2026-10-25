@@ -16,7 +16,7 @@ const RECEIPT_TITLE = 'Squishy MMG'
 
 // Struk + detail transaksi. Bagian struk bisa dicetak / disimpan PDF lewat dialog
 // cetak browser (lihat @media print di styles.css); tombol-tombol tidak ikut tercetak.
-export default function SaleDialog({ sale, cash = null, justSaved = false, onClose, onChanged }) {
+export default function SaleDialog({ sale, cash = null, justSaved = false, onClose, onChanged, onEdit }) {
   const { api, isAdmin } = useStore()
   const [voiding, setVoiding] = useState(false)
   const [reason, setReason] = useState('')
@@ -82,6 +82,7 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
         No. transaksi: <b>{sale.sale_no}</b>
         {sale.cashier_name && <><br />Dicatat oleh: <b>{sale.cashier_name}</b></>}
         {sale.voided_by_name && <><br />Di-void oleh: <b>{sale.voided_by_name}</b></>}
+        {sale.edited_at && <><br />Diedit owner: <b>{formatDateTimeJakarta(sale.edited_at)}</b></>}
       </p>
 
       {voiding ? (
@@ -104,6 +105,7 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
           {isAdmin && sale.status === 'completed' && (
             <button type="button" className="danger-outline" onClick={() => setVoiding(true)}>Void</button>
           )}
+          {onEdit && sale.status === 'completed' && <button type="button" onClick={onEdit}>Edit</button>}
           <button type="button" onClick={() => window.print()}>Cetak struk</button>
           <button type="button" className="primary" onClick={onClose}>{justSaved ? 'Selesai' : 'Tutup'}</button>
         </div>

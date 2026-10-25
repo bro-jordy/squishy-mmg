@@ -120,6 +120,80 @@ export function voidSale(state, { saleId, reason, voidedByName }, now = new Date
   }
 }
 
+// Edit transaksi selesai (hanya owner; dicek pemanggil). Padanan edit_sale() di
+// db/migrations/2026-10-25_edit_sale.sql. items: [{ variantId, qty, unitPrice }].
+// Total dihitung ulang; selisih stok dicatat sebagai movement 'adjustment'.
+export function editSale(state, { saleId, paymentMethod, paymentConfirmed, items, reason }, now = new Date()) {
+  const sale = state.sales.find((s) => s.id === saleId)
+  if (!sale) throw new SaleError('Transaksi tidak ditemukan')
+  if (sale.status !== 'completed') throw new SaleError('Hanya transaksi selesai yang bisa diedit (transaksi void tidak)')
+  if (typeof reason !== 'string' || reason.trim() === '') throw new SaleError('Alasan edit wajib diisi')
+  if (!['cash', 'qris'].includes(paymentMethod)) throw new SaleError(`Metode pembayaran tidak valid: ${paymentMethod}`)
+  if (!Array.isArray(items) || items.length === 0) throw new SaleError('Transaksi harus punya minimal satu barang')
+  const seen = new Set()
+  for (const it of items) {
+    if (!it?.variantId || !Number.isInteger(it.qty) || it.qty <= 0 || !Number.isInteger(it.unitPrice) || it.unitPrice < 0) {
+      throw new SaleError('Setiap item wajib punya variant_id, qty > 0, dan harga >= 0')
+    }
+    if (seen.has(it.variantId)) throw new SaleError('Barang yang sama tidak boleh muncul dua kali')
+    seen.add(it.variantId)
+  }
+
+  const stock = stockMap(state)
+  const variants = new Map(state.variants.map((v) => [v.id, v]))
+  const products = new Map(state.products.map((p) => [p.id, p]))
+  const oldItems = new Map(sale.sale_items.map((i) => [i.variant_id, i]))
+
+  const lines = []
+  const deltas = [] // { variantId, delta }: > 0 stok kembali, < 0 stok keluar
+  for (const it of items) {
+    const v = variants.get(it.variantId)
+    if (!v) throw new SaleError('Ada barang yang tidak ditemukan di toko ini')
+    const p = products.get(v.product_id)
+    const label = labelOf(v)
+    const old = oldItems.get(it.variantId)
+    if (!old && !(v.is_active && p.is_active)) throw new SaleError(`Barang nonaktif: ${p.name} (${label})`)
+    const delta = (old?.qty ?? 0) - it.qty
+    if (delta < 0 && (stock.get(it.variantId) ?? 0) < -delta) {
+      throw new SaleError(`Stok tidak cukup: ${p.name} (${label}): sisa ${stock.get(it.variantId) ?? 0}, tambahan diminta ${-delta}`)
+    }
+    if (delta !== 0) deltas.push({ variantId: it.variantId, delta })
+    lines.push({
+      variant_id: it.variantId, qty: it.qty, unit_price: it.unitPrice, line_total: it.qty * it.unitPrice,
+      sku: old?.sku ?? p.sku, product_name: old?.product_name ?? p.name, variant_label: old?.variant_label ?? label,
+    })
+  }
+  // barang yang dihapus dari transaksi: stok kembali penuh
+  for (const old of sale.sale_items) {
+    if (!seen.has(old.variant_id)) deltas.push({ variantId: old.variant_id, delta: old.qty })
+  }
+
+  let nextId = state.nextId
+  const movements = deltas.map((d) => ({
+    id: nextId++, variant_id: d.variantId, movement_type: 'adjustment', qty_delta: d.delta,
+    reason: `Edit transaksi ${sale.sale_no}: ${reason.trim()}`, sale_id: saleId, created_at: now.toISOString(),
+  }))
+
+  const confirmed = paymentMethod === 'cash' || Boolean(paymentConfirmed)
+  const total = lines.reduce((n, l) => n + l.line_total, 0)
+  return {
+    state: {
+      ...state,
+      nextId,
+      sales: state.sales.map((s) => s.id !== saleId ? s : {
+        ...s,
+        payment_method: paymentMethod,
+        payment_status: confirmed ? 'confirmed' : 'unconfirmed',
+        payment_confirmed_at: confirmed ? (s.payment_confirmed_at ?? now.toISOString()) : null,
+        total,
+        edited_at: now.toISOString(),
+        sale_items: lines.map((l, i) => ({ id: `${saleId}-e${now.getTime()}-${i + 1}`, ...l })),
+      }),
+      movements: [...state.movements, ...movements],
+    },
+  }
+}
+
 export function confirmPayment(state, saleId, now = new Date()) {
   return {
     ...state,
@@ -138,4 +212,9 @@ export function salesInRange(state, from, to, createdBy = null) {
       return d >= from && d <= to && (!createdBy || s.created_by === createdBy)
     })
     .sort((a, b) => (a.sold_at < b.sold_at ? 1 : a.sold_at > b.sold_at ? -1 : b.id.localeCompare(a.id, 'en', { numeric: true })))
+}
+
+// Saring transaksi menurut metode bayar: 'all' | 'cash' | 'qris'.
+export function filterByPayment(sales, method) {
+  return method === 'cash' || method === 'qris' ? sales.filter((s) => s.payment_method === method) : sales
 }

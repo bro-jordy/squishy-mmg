@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { checkout, confirmPayment, salesInRange, voidSale, SaleError } from './salesLogic.js'
+import { checkout, confirmPayment, editSale, filterByPayment, salesInRange, voidSale, SaleError } from './salesLogic.js'
 import { initState, stockOf, stockMap } from './stockLogic.js'
 import { updateProduct, updateVariant } from './masterLogic.js'
 import { jakartaDateKey, jakartaDayRange } from './format.js'
@@ -145,4 +145,71 @@ test('newId: format UUID v4 dan unik', () => {
   const ids = new Set(Array.from({ length: 50 }, newId))
   assert.equal(ids.size, 50)
   for (const id of ids) assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+})
+
+test('edit transaksi: metode, nominal, item; stok mengikuti dan total dihitung ulang', () => {
+  const s = base()
+  const ungu = vid(s, 'A12', 'Ungu')
+  const biru = vid(s, 'A12', 'Biru')
+  const r = buy(s, [{ variantId: ungu, qty: 1 }])
+  const e1 = editSale(r.state, {
+    saleId: r.saleId, paymentMethod: 'qris', paymentConfirmed: true, reason: 'koreksi',
+    items: [{ variantId: ungu, qty: 2, unitPrice: 30000 }],
+  }, NOW)
+  const sale = e1.state.sales[0]
+  assert.equal(sale.total, 60000)
+  assert.equal(sale.payment_method, 'qris')
+  assert.equal(sale.payment_status, 'confirmed')
+  assert.ok(sale.edited_at)
+  assert.equal(stockOf(e1.state, ungu), stockOf(s, ungu) - 2)
+
+  // ganti barang Ungu -> Biru; QRIS belum dikonfirmasi
+  const e2 = editSale(e1.state, {
+    saleId: r.saleId, paymentMethod: 'qris', paymentConfirmed: false, reason: 'salah warna',
+    items: [{ variantId: biru, qty: 1, unitPrice: 35000 }],
+  }, NOW)
+  assert.equal(stockOf(e2.state, ungu), stockOf(s, ungu))
+  assert.equal(stockOf(e2.state, biru), stockOf(s, biru) - 1)
+  assert.equal(e2.state.sales[0].payment_status, 'unconfirmed')
+  assert.equal(e2.state.sales[0].payment_confirmed_at, null)
+  assert.equal(e2.state.sales[0].sale_items.length, 1)
+
+  // tunai selalu terkonfirmasi
+  const e3 = editSale(e2.state, {
+    saleId: r.saleId, paymentMethod: 'cash', paymentConfirmed: false, reason: 'tunai',
+    items: [{ variantId: biru, qty: 1, unitPrice: 35000 }],
+  }, NOW)
+  assert.equal(e3.state.sales[0].payment_status, 'confirmed')
+  // ledger tetap sama dengan saldo
+  for (const [id, n] of stockMap(e3.state)) {
+    const sum = e3.state.movements.filter((m) => m.variant_id === id).reduce((a, m) => a + m.qty_delta, 0)
+    assert.equal(sum, n)
+  }
+})
+
+test('edit transaksi: validasi, stok kurang, dan transaksi void ditolak tanpa mengubah state', () => {
+  const s = base()
+  const v = vid(s, 'A25')
+  const r = buy(s, [{ variantId: v, qty: 1 }])
+  const ok = { saleId: r.saleId, paymentMethod: 'cash', reason: 'x', items: [{ variantId: v, qty: 1, unitPrice: 1000 }] }
+  assert.throws(() => editSale(r.state, { ...ok, reason: ' ' }), /Alasan/)
+  assert.throws(() => editSale(r.state, { ...ok, paymentMethod: 'transfer' }), /Metode/)
+  assert.throws(() => editSale(r.state, { ...ok, items: [] }), /minimal satu/)
+  assert.throws(() => editSale(r.state, { ...ok, items: [{ variantId: v, qty: 0, unitPrice: 1 }] }), /qty/)
+  assert.throws(() => editSale(r.state, { ...ok, items: [ok.items[0], ok.items[0]] }), /dua kali/)
+  assert.throws(() => editSale(r.state, { ...ok, items: [{ variantId: v, qty: stockOf(r.state, v) + 5, unitPrice: 1 }] }), /Stok tidak cukup/)
+  assert.throws(() => editSale(r.state, { ...ok, saleId: 'nope' }), /tidak ditemukan/)
+  const voided = voidSale(r.state, { saleId: r.saleId, reason: 'batal' }, NOW)
+  assert.throws(() => editSale(voided.state, ok), /transaksi selesai/)
+})
+
+test('filter pembayaran: semua / tunai / QRIS', () => {
+  const s = base()
+  const v = vid(s, 'A25')
+  const a = buy(s, [{ variantId: v, qty: 1 }])
+  const b = checkout(a.state, { idempotencyKey: newId(), paymentMethod: 'qris', paymentConfirmed: true, items: [{ variantId: v, qty: 1 }] }, NOW)
+  const all = b.state.sales
+  assert.equal(filterByPayment(all, 'all').length, 2)
+  assert.deepEqual(filterByPayment(all, 'cash').map((x) => x.payment_method), ['cash'])
+  assert.deepEqual(filterByPayment(all, 'qris').map((x) => x.payment_method), ['qris'])
 })
