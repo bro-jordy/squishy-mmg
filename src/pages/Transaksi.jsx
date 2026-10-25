@@ -87,6 +87,9 @@ export default function Transaksi() {
                         {s.customer_name ? ` · ${s.customer_name}` : ''} · {s.sale_items.length} barang
                         {isAdmin && s.cashier_name ? ` · kasir: ${s.cashier_name}` : ''}
                       </small>
+                      <br /><small className="sale-items">
+                        {s.sale_items.map((i) => `${i.product_name} · ${i.variant_label}${i.qty > 1 ? ` ×${i.qty}` : ''}`).join(', ')}
+                      </small>
                     </span>
                     <span className="sale-right">
                       <b>{formatRupiah(s.total)}</b>
