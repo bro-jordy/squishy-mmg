@@ -5,10 +5,15 @@ import { initState } from './stockLogic.js'
 // Isinya wadah multi-toko: { stores, states: { [storeId]: state toko } } — tiap toko punya
 // master barang, stok, transaksi, setoran, dan pengguna sendiri (terpisah penuh).
 const KEY = 'mmg-local-v4'
+const CLONE_KEY = 'mmg-clone-v1'
+
+// Data clone production (scripts/build_prod_clone.py) membawa `states` sendiri.
+const isClone = (seed) => Boolean(seed.states)
+const keyOf = (seed) => (isClone(seed) ? CLONE_KEY : KEY)
 
 // Jika data contoh (seed) berubah, simpanan lama dianggap kadaluarsa dan di-reset.
 const fingerprint = (seed) =>
-  `${seed.stores.length}:${seed.variants.length}:${seed.variants.reduce((n, v) => n + v.stock, 0)}`
+  isClone(seed) ? String(seed.dibuat_dari) : `${seed.stores.length}:${seed.variants.length}:${seed.variants.reduce((n, v) => n + v.stock, 0)}`
 
 const MEMBERS = {
   REA: [
@@ -21,6 +26,7 @@ const MEMBERS = {
 // Toko pertama memakai master barang + Stock Awal dari sheet; toko lain KOSONG (barangnya
 // ditambahkan lewat Master Barang).
 export function initContainer(seed, now = new Date()) {
+  if (isClone(seed)) return structuredClone({ stores: seed.stores, states: seed.states, transfers: seed.transfers ?? [] })
   const states = {}
   seed.stores.forEach((store, i) => {
     const s = i === 0 ? seed : { ...seed, products: [], variants: [] }
@@ -40,7 +46,7 @@ const valid = (c) =>
 
 export function loadContainer(seed) {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = localStorage.getItem(keyOf(seed))
     if (raw) {
       const saved = JSON.parse(raw)
       if (saved.fp === fingerprint(seed) && valid(saved.container)) return saved.container
@@ -53,7 +59,7 @@ export function loadContainer(seed) {
 
 export function saveContainer(seed, container) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ fp: fingerprint(seed), container }))
+    localStorage.setItem(keyOf(seed), JSON.stringify({ fp: fingerprint(seed), container }))
   } catch {
     // abaikan: data tetap ada di memori selama tab terbuka
   }
@@ -62,6 +68,7 @@ export function saveContainer(seed, container) {
 export function clearState() {
   try {
     localStorage.removeItem(KEY)
+    localStorage.removeItem(CLONE_KEY)
   } catch {
     // abaikan
   }

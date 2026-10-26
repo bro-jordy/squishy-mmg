@@ -10,6 +10,8 @@ export const MOVEMENT_LABEL = {
   damaged: 'Rusak',
   return_owner: 'Retur ke pemilik',
   adjustment: 'Koreksi / opname',
+  transfer_out: 'Transfer keluar',
+  transfer_in: 'Transfer masuk',
 }
 
 export class StockError extends Error {}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { LOCAL_MODE } from '../lib/mode'
-import { resetLocalData } from '../lib/data'
+import { cloneAvailable, resetLocalData, usingClone } from '../lib/data'
 import { LOCAL_USERS } from '../lib/localUsers'
 import { useStore } from '../lib/store.jsx'
 import { useMediaQuery } from '../lib/useMediaQuery'
@@ -38,11 +38,15 @@ function LocalBanner() {
   const { user } = useStore()
   return (
     <p className="local-banner" role="status">
-      Mode lokal — masuk sebagai <b>{user.nama}</b>; data contoh tersimpan di browser ini (tanpa Supabase).
+      Mode lokal — masuk sebagai <b>{user.nama}</b>;{' '}
+      {usingClone() ? <b>data CLONE production</b> : 'data contoh'} tersimpan di browser ini (tanpa Supabase, production tidak tersentuh).
       {' '}Ganti pengguna:{' '}
       {Object.entries(LOCAL_USERS).map(([key, u]) => (
         <a key={key} href={`?sebagai=${key}`}>{u.nama}</a>
       )).reduce((acc, el, i) => (i ? [...acc, ' · ', el] : [el]), [])}
+      {cloneAvailable() && (
+        <>{' · '}<a href={usingClone() ? '?data=contoh' : '?data=prod'}>{usingClone() ? 'Pakai data contoh' : 'Pakai clone production'}</a></>
+      )}
       {' · '}
       <button
         type="button"
@@ -54,7 +58,7 @@ function LocalBanner() {
           }
         }}
       >
-        Reset data contoh
+        Reset data
       </button>
     </p>
   )

@@ -6,6 +6,7 @@ export const LOCAL_USERS = {
   rea: { id: 'u-rea', nama: 'Rea', is_platform_owner: false },
   soso: { id: 'u-soso', nama: 'Soso', is_platform_owner: false },
   kasir: { id: 'u-kasir', nama: 'Kasir Rea', is_platform_owner: false },
+  kasirsoso: { id: 'u-kasirsoso', nama: 'Kasir Soso', is_platform_owner: false }, // hanya ada di clone production
 }
 
 export function localUserKey() {

@@ -6,6 +6,7 @@ import * as master from './masterLogic'
 import * as salesLogic from './salesLogic'
 import * as report from './reportLogic'
 import * as members from './memberLogic'
+import { transferStock as transferLogic } from './transferLogic'
 import { LOCAL_USERS } from './localUsers'
 import { jakartaDayRange } from './format'
 import { clearState, loadContainer, saveContainer } from './localStore'
@@ -16,9 +17,31 @@ import { clearState, loadContainer, saveContainer } from './localStore'
 // pernah ikut. Semua fungsi tulis melempar Error dengan pesan yang aman ditampilkan.
 
 let local = null // { seed, container } — hanya mode lokal
+
+// Sumber data lokal: data contoh, atau clone production bila file src/data/prod-clone.json ada
+// (dibuat scripts/build_prod_clone.py, di-gitignore). Pilih lewat ?data=prod / ?data=contoh;
+// pilihan diingat di browser ini.
+const SOURCE_KEY = 'mmg-local-source'
+const cloneFiles = import.meta.glob('../data/prod-clone.json')
+const CLONE_PATH = '../data/prod-clone.json'
+function wantedSource() {
+  try {
+    const q = new URLSearchParams(window.location.search).get('data')
+    if (q === 'prod' || q === 'contoh') localStorage.setItem(SOURCE_KEY, q)
+    // Clone production dipakai otomatis bila file-nya ada, kecuali sudah memilih ?data=contoh.
+    return localStorage.getItem(SOURCE_KEY) !== 'contoh' && CLONE_PATH in cloneFiles ? 'prod' : 'contoh'
+  } catch {
+    return CLONE_PATH in cloneFiles ? 'prod' : 'contoh'
+  }
+}
+export const cloneAvailable = () => CLONE_PATH in cloneFiles
+export const usingClone = () => LOCAL_MODE && wantedSource() === 'prod'
+
 async function getLocal() {
   if (!local) {
-    const seed = (await import('../data/local-seed.json')).default
+    const seed = wantedSource() === 'prod'
+      ? (await cloneFiles[CLONE_PATH]()).default
+      : (await import('../data/local-seed.json')).default
     local = { seed, container: loadContainer(seed) }
   }
   return local
@@ -37,6 +60,15 @@ async function mutateLocal(storeId, fn) {
   const result = fn(state)
   const next = result.state ?? result
   l.container = { ...l.container, states: { ...l.container.states, [storeId]: next } }
+  saveContainer(l.seed, l.container)
+  return result
+}
+
+// Seperti mutateLocal, tapi untuk operasi lintas toko (transfer stok): fn(container) -> { container, ... }
+async function mutateLocalContainer(fn) {
+  const l = await getLocal()
+  const result = fn(l.container)
+  l.container = result.container
   saveContainer(l.seed, l.container)
   return result
 }
@@ -285,6 +317,66 @@ export function createApi({ store, user, role, isPlatformOwner = false }) {
         p_reason: reason,
       })
       if (error) throw dbError(error)
+    },
+
+    // ---- Transfer stok antar toko (HANYA owner platform) ----
+    // Katalog toko LAIN (untuk memilih barang tujuan/asal). Baris sama bentuknya dengan fetchCatalog.
+    async fetchStoreCatalog(otherStoreId) {
+      if (!isPlatformOwner) throw new Error('Hanya owner yang boleh transfer stok')
+      if (LOCAL_MODE) {
+        const l = await getLocal()
+        const state = l.container.states[otherStoreId]
+        if (!state) throw new Error('Toko tidak ditemukan')
+        const stock = stockMap(state)
+        return buildCatalog({
+          products: state.products,
+          variants: state.variants.map((v) => ({ ...v, stock: stock.get(v.id) ?? 0 })),
+        })
+      }
+      const { data, error } = await supabase
+        .from('v_catalog')
+        .select('variant_id, product_id, sku, display_name, variant_label, price, stock, is_sellable, ' +
+          'product_name, varian, warna, product_active, variant_active')
+        .eq('store_id', otherStoreId)
+      if (error) throw error
+      return data
+    },
+
+    // lines: [{ from: [{ variantId, qty }], to: [{ variantId, qty }], newProduct?: { sku, name, price } }]
+    // Jumlah asal harus sama dengan jumlah tujuan. Mengembalikan id transfer.
+    async transferStock({ fromStoreId, toStoreId, lines, note }) {
+      if (!isPlatformOwner) throw new Error('Hanya owner yang boleh transfer stok')
+      if (LOCAL_MODE) {
+        return (await mutateLocalContainer((c) => transferLogic(c, { fromStoreId, toStoreId, lines, note, byName: user.nama }))).transferId
+      }
+      const { data, error } = await supabase.rpc('transfer_stock', {
+        p_from_store: fromStoreId,
+        p_to_store: toStoreId,
+        p_lines: lines.map((l) => ({
+          from: l.from.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
+          to: (l.to ?? []).map((i) => ({ variant_id: i.variantId, qty: i.qty })),
+          ...(l.newProduct ? { new_product: { sku: l.newProduct.sku, name: l.newProduct.name, price: l.newProduct.price } } : {}),
+        })),
+        p_note: note || null,
+      })
+      if (error) throw dbError(error)
+      return data
+    },
+
+    // Riwayat transfer terbaru (semua toko), terbaru dulu.
+    async fetchTransfers(limit = 30) {
+      if (!isPlatformOwner) throw new Error('Hanya owner yang boleh melihat transfer stok')
+      if (LOCAL_MODE) {
+        const l = await getLocal()
+        return [...(l.container.transfers ?? [])].reverse().slice(0, limit)
+      }
+      const { data, error } = await supabase
+        .from('stock_transfers')
+        .select('id, from_store_id, to_store_id, note, detail, created_by_name, created_at')
+        .order('created_at', { ascending: false })
+        .limit(limit)
+      if (error) throw error
+      return data
     },
 
     // ---- Rekap & setoran (admin toko) ----
