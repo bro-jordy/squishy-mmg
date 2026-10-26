@@ -320,3 +320,4 @@ ol.plain { counter-reset: n; }
 .edit-total { margin: 0; text-align: right; }
 .dialog select { min-height: 44px; padding: 0 0.5rem; border-radius: 10px; border: 1px solid var(--line); width: 100%; background: var(--surface); color: inherit; font: inherit; }
 .sale-items { display: inline-block; margin-top: 0.15rem; }
+.variant-wrap .pos-product { flex: 1; min-width: 0; }

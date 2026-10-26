@@ -129,6 +129,33 @@ export default function Kasir() {
             {products.map((p) => {
               const open = openId === p.id || (query.trim() !== '' && products.length <= 3)
               const inCart = p.variants.reduce((n, v) => n + (cart[v.variant_id] ?? 0), 0)
+              // Produk dengan satu varian saja (mis. "Random"): tap nama = langsung masuk keranjang.
+              if (p.variants.length === 1) {
+                const v = p.variants[0]
+                const left = v.stock - inCart
+                return (
+                  <li key={p.id} className="card">
+                    <div className="variant-wrap">
+                      {inCart > 0 && (
+                        <button type="button" className="minus" aria-label={`Kurangi ${p.name}`} onClick={() => remove(v)}>−</button>
+                      )}
+                      <button type="button" className="pos-product" disabled={left <= 0} onClick={() => add(v)}
+                        aria-label={`Tambah ${p.name}`}>
+                        <span>
+                          <b>{p.name}</b>
+                          <br /><small className="muted">
+                            SKU {p.sku} · {v.stock <= 0 ? 'Habis' : left <= 0 ? 'Semua di keranjang' : `Stok ${left}`}
+                          </small>
+                        </span>
+                        <span className="pos-price">
+                          {formatRupiah(p.price)}
+                          {inCart > 0 && <b className="badge incart"> ×{inCart}</b>}
+                        </span>
+                      </button>
+                    </div>
+                  </li>
+                )
+              }
               return (
                 <li key={p.id} className="card">
                   <button type="button" className="pos-product" aria-expanded={open}
