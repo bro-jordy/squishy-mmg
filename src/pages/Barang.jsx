@@ -11,7 +11,8 @@ export default function Barang() {
         <NavLink to="/barang/master">Master Barang</NavLink>
         <NavLink to="/barang/stok">Stok Barang</NavLink>
         <NavLink to="/barang/keluar">Barang Keluar</NavLink>
-        {isPlatformOwner && <NavLink to="/barang/transfer">Transfer Stok</NavLink>}
+        {/* Transfer Stok disembunyikan sementara (kode dan halaman tetap ada):
+        {isPlatformOwner && <NavLink to="/barang/transfer">Transfer Stok</NavLink>} */}
       </nav>
       <Outlet />
     </section>

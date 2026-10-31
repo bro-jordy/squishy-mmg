@@ -57,7 +57,7 @@ function Shell() {
           <Route path="stok" element={<Stok />} />
           <Route path="stok/opname" element={<OpnameMassal />} />
           <Route path="keluar" element={<BarangKeluar />} />
-          <Route path="transfer" element={<TransferStok />} />
+          {/* Transfer Stok disembunyikan sementara: <Route path="transfer" element={<TransferStok />} /> */}
         </Route>
         <Route path="bagi-hasil" element={<AdminOnly title="Bagi Hasil"><BagiHasil /></AdminOnly>} />
         <Route path="pengaturan" element={<AdminOnly title="Pengaturan"><Pengaturan /></AdminOnly>}>

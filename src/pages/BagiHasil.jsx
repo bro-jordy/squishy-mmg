@@ -100,6 +100,11 @@ export default function BagiHasil() {
       {notice && <p className="notice" role="status">{notice}</p>}
 
       <div className="stats">
+        <div className="card stat">
+          <span>Penjualan</span>
+          <b>{formatRupiah(days.reduce((n, d) => n + d.total_penjualan, 0))}</b>
+          <small>{days.reduce((n, d) => n + d.transaksi, 0)} transaksi</small>
+        </div>
         <div className="card stat"><span>Total Bagian 75%</span><b>{formatRupiah(bal.total_bagian_75)}</b></div>
         <div className="card stat"><span>Sudah disetor</span><b>{formatRupiah(bal.sudah_disetor)}</b></div>
         <div className="card stat">
