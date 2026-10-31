@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useStore } from '../lib/store.jsx'
 import { formatDateJakarta, formatRupiah, todayJakarta } from '../lib/format'
-import { settlementBalance } from '../lib/reportLogic'
+import { exportCsv, exportRows, settlementBalance } from '../lib/reportLogic'
 import Basis from '../components/Basis.jsx'
 
 const STATUS_LABEL = { belum: 'Belum disetor', sebagian: 'Sebagian', lunas: 'Lunas', kelebihan: 'Kelebihan setor' }
@@ -17,6 +17,9 @@ export default function BagiHasil() {
   const [busy, setBusy] = useState(false)
   const [formError, setFormError] = useState('')
   const [notice, setNotice] = useState('')
+  const [exp, setExp] = useState({ from: todayJakarta(), to: todayJakarta() })
+  const [expBusy, setExpBusy] = useState(false)
+  const [expError, setExpError] = useState('')
 
   const load = useCallback(async () => {
     try {
@@ -55,6 +58,32 @@ export default function BagiHasil() {
     setBusy(false)
   }
 
+  async function onExport() {
+    if (expBusy || !exp.from || !exp.to || exp.from > exp.to) return
+    setExpBusy(true)
+    setExpError('')
+    try {
+      const sales = await api.fetchSales({ from: exp.from, to: exp.to })
+      const rows = exportRows(sales, settings?.pct_bagian_25)
+      if (rows.length === 0) {
+        setExpError('Tidak ada penjualan lunas pada periode ini.')
+      } else {
+        const blob = new Blob([exportCsv(rows)], { type: 'text/csv;charset=utf-8' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `rekap-${store.kode}-${exp.from}${exp.from === exp.to ? '' : `_sd_${exp.to}`}.csv`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+      }
+    } catch {
+      setExpError('Gagal menyiapkan export. Coba lagi.')
+    }
+    setExpBusy(false)
+  }
+
   async function remove(s) {
     if (!window.confirm(`Hapus catatan setoran ${formatRupiah(s.amount)} tanggal ${formatDateJakarta(s.settled_on)}?`)) return
     try {
@@ -89,6 +118,19 @@ export default function BagiHasil() {
           <span>Total Bagian 25%</span>
           <b>{formatRupiah(days.reduce((n, d) => n + d.bagian_25, 0))}</b>
         </div>
+      </div>
+
+      <h2>Export rekap</h2>
+      <div className="card form">
+        <p className="muted">File CSV (buka di Excel/Sheets): SKU, Nama Barang, Qty Terjual, Harga, Total, 25%, 75%. Hanya penjualan lunas.</p>
+        <div className="filters">
+          <label>Dari<input type="date" value={exp.from} max={exp.to} onChange={(e) => setExp((x) => ({ ...x, from: e.target.value }))} /></label>
+          <label>Sampai<input type="date" value={exp.to} min={exp.from} onChange={(e) => setExp((x) => ({ ...x, to: e.target.value }))} /></label>
+        </div>
+        {expError && <p className="error" role="alert">{expError}</p>}
+        <button type="button" className="primary" disabled={expBusy || !exp.from || !exp.to || exp.from > exp.to} onClick={onExport}>
+          {expBusy ? 'Menyiapkan…' : 'Unduh CSV'}
+        </button>
       </div>
 
       <h2>Catat setoran</h2>

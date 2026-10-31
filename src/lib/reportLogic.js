@@ -67,6 +67,42 @@ export function topProducts(sales, limit = 5) {
   return [...map.values()].sort((a, b) => b.qty - a.qty || b.revenue - a.revenue).slice(0, limit)
 }
 
+// Rekap export per SKU: SKU, Nama Barang, Qty Terjual, Harga, Total, 25%, 75%.
+// Hanya transaksi selesai & terkonfirmasi (sama dengan rekap lain). Baris = SKU + nama + harga
+// satuan (varian digabung; harga beda = baris beda). Bagian 25% dibulatkan per baris.
+export function exportRows(sales, pct = DEFAULT_PCT) {
+  const map = new Map()
+  for (const s of sales) {
+    if (!counts(s)) continue
+    for (const it of s.sale_items) {
+      const key = `${it.sku}|${it.product_name}|${it.unit_price}`
+      const r = map.get(key) ?? { sku: it.sku, nama: it.product_name, qty: 0, harga: it.unit_price, total: 0 }
+      r.qty += it.qty
+      r.total += it.line_total
+      map.set(key, r)
+    }
+  }
+  return [...map.values()]
+    .sort((a, b) => a.sku.localeCompare(b.sku, 'en', { numeric: true }) || a.nama.localeCompare(b.nama) || a.harga - b.harga)
+    .map((r) => {
+      const { bagian_25, bagian_75 } = splitShare(r.total, pct)
+      return { ...r, bagian_25, bagian_75 }
+    })
+}
+
+// CSV (pemisah ';' agar langsung rapi di Excel berlokal Indonesia; BOM agar UTF-8 terbaca). Baris TOTAL di akhir.
+export function exportCsv(rows) {
+  const esc = (v) => {
+    const t = String(v)
+    return /[";\n\r]/.test(t) ? `"${t.replaceAll('"', '""')}"` : t
+  }
+  const sum = (k) => rows.reduce((n, r) => n + r[k], 0)
+  const lines = [['SKU', 'Nama Barang', 'Qty Terjual', 'Harga', 'Total', '25%', '75%']]
+  for (const r of rows) lines.push([r.sku, r.nama, r.qty, r.harga, r.total, r.bagian_25, r.bagian_75])
+  lines.push(['', 'TOTAL', sum('qty'), '', sum('total'), sum('bagian_25'), sum('bagian_75')])
+  return `\uFEFF${lines.map((l) => l.map(esc).join(';')).join('\r\n')}\r\n`
+}
+
 const addDays = (key, n) => {
   const d = new Date(`${key}T00:00:00Z`)
   d.setUTCDate(d.getUTCDate() + n)

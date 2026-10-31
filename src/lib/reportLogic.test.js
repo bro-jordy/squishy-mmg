@@ -118,3 +118,21 @@ test('catat & hapus setoran dengan validasi', () => {
   assert.throws(() => cleanSettlement({ settled_on: 'kemarin', amount: 1 }), /Tanggal/)
   assert.throws(() => cleanSettlement({ settled_on: '2026-10-17', amount: 1, period_start: '2026-10-18', period_end: '2026-10-17' }), /Periode/)
 })
+
+test('exportRows: gabung varian per SKU+nama+harga, hanya yang lunas, ada baris TOTAL di CSV', async () => {
+  const { exportRows, exportCsv } = await import('./reportLogic.js')
+  const item = (sku, product_name, variant_label, qty, unit_price) => ({ sku, product_name, variant_label, qty, unit_price, line_total: qty * unit_price })
+  const sales = [
+    { status: 'completed', payment_status: 'confirmed', sale_items: [item('A10', 'Squishy "Roti"', 'Beruang', 1, 25000), item('A2', 'Kiwi', 'Pink', 2, 40000)] },
+    { status: 'completed', payment_status: 'confirmed', sale_items: [item('A10', 'Squishy "Roti"', 'Kuning', 2, 25000)] },
+    { status: 'completed', payment_status: 'unpaid', sale_items: [item('A2', 'Kiwi', 'Pink', 9, 40000)] },
+    { status: 'void', payment_status: 'confirmed', sale_items: [item('A2', 'Kiwi', 'Pink', 9, 40000)] },
+  ]
+  const rows = exportRows(sales, 25)
+  assert.deepEqual(rows.map((r) => [r.sku, r.qty, r.total, r.bagian_25, r.bagian_75]),
+    [['A2', 2, 80000, 20000, 60000], ['A10', 3, 75000, 18750, 56250]])
+  const csv = exportCsv(rows)
+  assert.ok(csv.startsWith('﻿SKU;Nama Barang;Qty Terjual;Harga;Total;25%;75%\r\n'))
+  assert.ok(csv.includes('A10;"Squishy ""Roti""";3;25000;75000;18750;56250'))
+  assert.ok(csv.includes(';TOTAL;5;;155000;38750;116250'))
+})
