@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Modal from './Modal.jsx'
 import { formatRupiah } from '../lib/format'
 import { useStore } from '../lib/store.jsx'
+import { autoReason } from '../lib/editReason'
 
 const toInt = (v) => (/^\d+$/.test(String(v).trim()) ? Number(v) : NaN)
 
@@ -9,12 +10,13 @@ const toInt = (v) => (/^\d+$/.test(String(v).trim()) ? Number(v) : NaN)
 // Total dihitung dari item. Setiap edit wajib beralasan dan tercatat di database.
 export default function EditSaleDialog({ sale, onClose, onSaved }) {
   const { api } = useStore()
-  const [method, setMethod] = useState(sale.payment_method ?? 'cash')
+  const [method, setMethod] = useState(sale.payment_status === 'unpaid' ? 'unpaid' : sale.payment_method)
   const [confirmed, setConfirmed] = useState(sale.payment_status === 'confirmed')
   const [items, setItems] = useState(() => sale.sale_items.map((i) => ({
-    variantId: i.variant_id, label: `${i.product_name} · ${i.variant_label}`, qty: String(i.qty), price: String(i.unit_price),
+    variantId: i.variant_id, sku: i.sku, label: `${i.product_name} · ${i.variant_label}`, qty: String(i.qty), price: String(i.unit_price),
   })))
-  const [reason, setReason] = useState('')
+  const [reasonText, setReasonText] = useState('')
+  const [reasonTouched, setReasonTouched] = useState(false) // sudah diketik sendiri: berhenti ditimpa otomatis
   const [customer, setCustomer] = useState(sale.customer_name ?? '')
   const [catalog, setCatalog] = useState([])
   const [busy, setBusy] = useState(false)
@@ -29,6 +31,12 @@ export default function EditSaleDialog({ sale, onClose, onSaved }) {
     return catalog.filter((r) => r.is_sellable && !used.has(r.variant_id))
   }, [catalog, items])
 
+  const suggested = autoReason({ sale, customer, items, method, confirmed })
+  const nameChanged = customer.trim() !== (sale.customer_name ?? '').trim()
+  const othersChanged = autoReason({ sale, customer: sale.customer_name ?? '', items, method, confirmed }) !== ''
+  const reason = reasonTouched ? reasonText : suggested
+  const setReason = (v) => { setReasonText(v); setReasonTouched(v !== '') }
+
   const parsed = items.map((i) => ({ variantId: i.variantId, qty: toInt(i.qty), unitPrice: toInt(i.price) }))
   const valid = parsed.length > 0 && parsed.every((i) => i.qty > 0 && i.unitPrice >= 0)
   const total = valid ? parsed.reduce((n, i) => n + i.qty * i.unitPrice, 0) : null
@@ -38,7 +46,7 @@ export default function EditSaleDialog({ sale, onClose, onSaved }) {
   function addItem(variantId) {
     const r = catalog.find((x) => x.variant_id === variantId)
     if (!r) return
-    setItems((xs) => [...xs, { variantId, label: `${r.display_name} · ${r.variant_label}`, qty: '1', price: String(r.price) }])
+    setItems((xs) => [...xs, { variantId, sku: r.sku, label: `${r.display_name} · ${r.variant_label}`, qty: '1', price: String(r.price) }])
   }
 
   // Nama pembeli disimpan sendiri (tanpa alasan, tanpa menyentuh barang/harga).
@@ -61,8 +69,11 @@ export default function EditSaleDialog({ sale, onClose, onSaved }) {
     setBusy(true)
     setError('')
     try {
-      if (customer.trim() !== (sale.customer_name ?? '')) await api.setSaleCustomer({ saleId: sale.id, customerName: customer.trim() })
-      await api.editSale({ saleId: sale.id, paymentMethod: method, paymentConfirmed: confirmed, items: parsed, reason: reason.trim() })
+      if (nameChanged) await api.setSaleCustomer({ saleId: sale.id, customerName: customer.trim() })
+      // hanya nama yang berubah: cukup simpan nama (barang/pembayaran/stok tidak disentuh)
+      if (othersChanged) {
+        await api.editSale({ saleId: sale.id, paymentMethod: method, paymentConfirmed: confirmed, items: parsed, reason: reason.trim() })
+      }
       onSaved(`Transaksi ${sale.sale_no} diedit`)
     } catch (err) {
       setError(err.message || 'Gagal menyimpan. Coba lagi.')
@@ -84,10 +95,11 @@ export default function EditSaleDialog({ sale, onClose, onSaved }) {
         <fieldset className="edit-method">
           <legend>Metode pembayaran</legend>
           <div className="segmented" role="group" aria-label="Metode pembayaran">
-            {[['qris', 'QRIS'], ['cash', 'Tunai']].map(([key, label]) => (
+            {[['qris', 'QRIS'], ['cash', 'Tunai'], ['unpaid', 'Belum bayar']].map(([key, label]) => (
               <button key={key} type="button" aria-pressed={method === key} onClick={() => setMethod(key)}>{label}</button>
             ))}
           </div>
+          {method === 'unpaid' && <p className="hint">Pesanan tetap belum dibayar dan belum dihitung sebagai penjualan.</p>}
           {method === 'qris' && (
             <label className="check">
               <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />

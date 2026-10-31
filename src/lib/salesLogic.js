@@ -129,7 +129,7 @@ export function editSale(state, { saleId, paymentMethod, paymentConfirmed, items
   if (!sale) throw new SaleError('Transaksi tidak ditemukan')
   if (sale.status !== 'completed') throw new SaleError('Hanya transaksi selesai yang bisa diedit (transaksi void tidak)')
   if (typeof reason !== 'string' || reason.trim() === '') throw new SaleError('Alasan edit wajib diisi')
-  if (!['cash', 'qris'].includes(paymentMethod)) throw new SaleError(`Metode pembayaran tidak valid: ${paymentMethod}`)
+  if (!['cash', 'qris', 'unpaid'].includes(paymentMethod)) throw new SaleError(`Metode pembayaran tidak valid: ${paymentMethod}`)
   if (!Array.isArray(items) || items.length === 0) throw new SaleError('Transaksi harus punya minimal satu barang')
   const seen = new Set()
   for (const it of items) {
@@ -175,7 +175,8 @@ export function editSale(state, { saleId, paymentMethod, paymentConfirmed, items
     reason: `Edit transaksi ${sale.sale_no}: ${reason.trim()}`, sale_id: saleId, created_at: now.toISOString(),
   }))
 
-  const confirmed = paymentMethod === 'cash' || Boolean(paymentConfirmed)
+  const unpaid = paymentMethod === 'unpaid'
+  const confirmed = !unpaid && (paymentMethod === 'cash' || Boolean(paymentConfirmed))
   const total = lines.reduce((n, l) => n + l.line_total, 0)
   return {
     state: {
@@ -183,8 +184,8 @@ export function editSale(state, { saleId, paymentMethod, paymentConfirmed, items
       nextId,
       sales: state.sales.map((s) => s.id !== saleId ? s : {
         ...s,
-        payment_method: paymentMethod,
-        payment_status: confirmed ? 'confirmed' : 'unconfirmed',
+        payment_method: unpaid ? null : paymentMethod,
+        payment_status: unpaid ? 'unpaid' : confirmed ? 'confirmed' : 'unconfirmed',
         payment_confirmed_at: confirmed ? (s.payment_confirmed_at ?? now.toISOString()) : null,
         total,
         edited_at: now.toISOString(),

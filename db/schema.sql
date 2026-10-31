@@ -1008,7 +1008,7 @@ begin
   if p_reason is null or btrim(p_reason) = '' then
     raise exception 'Alasan edit wajib diisi';
   end if;
-  if p_payment_method not in ('cash', 'qris') then
+  if p_payment_method not in ('cash', 'qris', 'unpaid') then
     raise exception 'Metode pembayaran tidak valid: %', p_payment_method;
   end if;
   if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
@@ -1089,16 +1089,19 @@ begin
 
   v_confirmed := (p_payment_method = 'cash') or coalesce(p_payment_confirmed, false);
   update sales
-     set payment_method = p_payment_method,
-         payment_status = case when v_confirmed then 'confirmed' else 'unconfirmed' end,
-         payment_confirmed_at = case when v_confirmed then coalesce(s.payment_confirmed_at, now()) end,
+     set payment_method = case when p_payment_method = 'unpaid' then null else p_payment_method end,
+         payment_status = case when p_payment_method = 'unpaid' then 'unpaid'
+                               when v_confirmed then 'confirmed' else 'unconfirmed' end,
+         payment_confirmed_at = case when p_payment_method = 'unpaid' then null
+                                     when v_confirmed then coalesce(s.payment_confirmed_at, now()) end,
          total = v_total,
          edited_at = now()
    where id = p_sale_id;
 
   select jsonb_build_object(
-           'payment_method', p_payment_method,
-           'payment_status', case when v_confirmed then 'confirmed' else 'unconfirmed' end,
+           'payment_method', case when p_payment_method = 'unpaid' then null else p_payment_method end,
+           'payment_status', case when p_payment_method = 'unpaid' then 'unpaid'
+                                  when v_confirmed then 'confirmed' else 'unconfirmed' end,
            'total', v_total,
            'items', coalesce(jsonb_agg(jsonb_build_object(
              'variant_id', i.variant_id, 'sku', i.sku, 'product_name', i.product_name,

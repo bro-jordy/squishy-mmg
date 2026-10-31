@@ -49,6 +49,19 @@ select t_as('00000000-0000-0000-0000-0000000000b1');  -- admin REA
 select void_sale(:'h3','batal pesan');
 select t_assert((select stock from product_variants where id=:'ungu')=:s0-3,'void hold: stok kembali (hanya hold ketiga)');
 
+
+-- edit_sale (owner) pada pesanan belum bayar: tetap belum bayar bila metode 'unpaid'; bisa dijadikan lunas
+select t_as('00000000-0000-0000-0000-0000000000d1');
+select hold_sale(:'rea','aaaaaaaa-1111-1111-1111-111111111111',
+  jsonb_build_array(jsonb_build_object('variant_id',:'ungu','qty',1)),null,null) as h4 \gset
+select t_as('00000000-0000-0000-0000-0000000000a1');  -- owner
+select edit_sale(:'h4','unpaid',false,jsonb_build_array(jsonb_build_object('variant_id',:'ungu','qty',1,'unit_price',35000)),'tes unpaid');
+select t_assert((select payment_status from sales where id=:'h4')='unpaid' and (select payment_method from sales where id=:'h4') is null,'edit unpaid: tetap belum bayar');
+select edit_sale(:'h4','cash',false,jsonb_build_array(jsonb_build_object('variant_id',:'ungu','qty',1,'unit_price',35000)),'tes bayar');
+select t_assert((select payment_status from sales where id=:'h4')='confirmed','edit ke tunai: lunas');
+select edit_sale(:'h4','unpaid',false,jsonb_build_array(jsonb_build_object('variant_id',:'ungu','qty',1,'unit_price',35000)),'tes balik');
+select t_assert((select payment_status from sales where id=:'h4')='unpaid' and (select payment_confirmed_at from sales where id=:'h4') is null,'edit balik ke belum bayar');
+
 -- constraint: tunai tidak boleh unconfirmed, unpaid wajib tanpa metode
 reset role;
 select t_expect_error($q$update sales set payment_status='unpaid' where payment_method='cash' and payment_status='confirmed'$q$,'check');
