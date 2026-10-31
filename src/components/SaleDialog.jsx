@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Modal from './Modal.jsx'
 import { formatDateTimeJakarta, formatRupiah } from '../lib/format'
 import { useStore } from '../lib/store.jsx'
+import { renderReceiptBlob, shareReceipt } from '../lib/receiptImage.js'
 
 export function saleStatus(sale) {
   if (sale.status === 'void') return { key: 'void', label: 'Void' }
@@ -27,6 +28,21 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
   const [paying, setPaying] = useState(false)
   const [payMethod, setPayMethod] = useState('cash')
   const [payChecked, setPayChecked] = useState(false)
+
+  const [shareMsg, setShareMsg] = useState('')
+  async function shareImage() {
+    if (busy) return
+    setBusy(true)
+    setShareMsg('')
+    try {
+      const blob = await renderReceiptBlob(sale, { title: RECEIPT_TITLE, statusLabel: st.label })
+      const how = await shareReceipt(blob)
+      setShareMsg({ copied: 'Foto struk disalin. Tinggal tempel (paste) di chat.', downloaded: 'Foto struk diunduh. Kirim dari galeri/unduhan.' }[how] ?? '')
+    } catch {
+      setShareMsg('Gagal membuat foto struk. Coba lagi.')
+    }
+    setBusy(false)
+  }
 
   async function confirmPay(e) {
     e.preventDefault()
@@ -103,6 +119,8 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
         {sale.edited_at && <><br />Diedit owner: <b>{formatDateTimeJakarta(sale.edited_at)}</b></>}
       </p>
 
+      {shareMsg && <p className="notice no-print" role="status">{shareMsg}</p>}
+
       {paying ? (
         <form className="form no-print" onSubmit={confirmPay}>
           <div className="segmented" role="group" aria-label="Metode pembayaran">
@@ -147,7 +165,9 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
             <button type="button" className="danger-outline" onClick={() => setVoiding(true)}>Void</button>
           )}
           {onEdit && sale.status === 'completed' && <button type="button" onClick={onEdit}>Edit</button>}
-          <button type="button" onClick={() => window.print()}>Cetak struk</button>
+          {/* Cetak struk (dinonaktifkan; diganti bagikan foto). Kode cetak dibiarkan, styles.css @media print juga tetap.
+          <button type="button" onClick={() => window.print()}>Cetak struk</button> */}
+          <button type="button" disabled={busy} onClick={shareImage}>Bagikan struk (foto)</button>
           <button type="button" className="primary" onClick={onClose}>{justSaved ? 'Selesai' : 'Tutup'}</button>
         </div>
       )}
