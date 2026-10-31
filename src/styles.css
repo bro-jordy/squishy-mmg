@@ -125,8 +125,6 @@ button.danger-outline { color: #b3261e; border-color: #b3261e; }
 .sales { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
 .sale-row { width: 100%; display: flex; justify-content: space-between; gap: 0.75rem; text-align: left; padding: 0.6rem 0.8rem; min-height: 60px; background: var(--surface); }
 .sale-row.void { opacity: 0.7; }
-.sale-li { display: grid; gap: 0.25rem; }
-.sale-share { justify-self: end; }
 .sale-right { display: grid; justify-items: end; gap: 0.2rem; font-variant-numeric: tabular-nums; }
 .badge.st-ok { background: #e4f6e8; color: #14502a; }
 .badge.st-unpaid { background: #e3eefc; color: #1d4a85; }

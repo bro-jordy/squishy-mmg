@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useStore } from '../lib/store.jsx'
 import { formatDateJakarta, formatRupiah, formatTimeJakarta, todayJakarta } from '../lib/format'
-import SaleDialog, { RECEIPT_TITLE, saleStatus } from '../components/SaleDialog.jsx'
-import { renderReceiptBlob, shareReceipt } from '../lib/receiptImage'
+import SaleDialog, { saleStatus } from '../components/SaleDialog.jsx'
 import EditSaleDialog from '../components/EditSaleDialog.jsx'
 import { filterByPayment } from '../lib/salesLogic'
 
@@ -20,20 +19,6 @@ export default function Transaksi() {
   const [selected, setSelected] = useState(null)
   const [editing, setEditing] = useState(null)
   const [notice, setNotice] = useState('')
-  const [sharing, setSharing] = useState(null) // id transaksi yang sedang dibuat fotonya
-
-  async function shareImage(s) {
-    if (sharing) return
-    setSharing(s.id)
-    setNotice('')
-    try {
-      const how = await shareReceipt(await renderReceiptBlob(s, { title: RECEIPT_TITLE, statusLabel: saleStatus(s).label }))
-      setNotice({ copied: 'Foto struk disalin. Tinggal tempel (paste) di chat.', downloaded: 'Foto struk diunduh. Kirim dari galeri/unduhan.' }[how] ?? '')
-    } catch {
-      setNotice('Gagal membuat foto struk. Coba lagi.')
-    }
-    setSharing(null)
-  }
 
   const load = useCallback(async () => {
     if (!from || !to || from > to) return
@@ -92,7 +77,7 @@ export default function Transaksi() {
             {shown.map((s) => {
               const st = saleStatus(s)
               return (
-                <li key={s.id} className="sale-li">
+                <li key={s.id}>
                   <button type="button" className={`sale-row ${s.status === 'void' ? 'void' : ''}`}
                     onClick={() => { setNotice(''); setSelected(s) }}>
                     <span>
@@ -111,12 +96,6 @@ export default function Transaksi() {
                       <b className={`badge st-${st.key}`}>{st.label}</b>
                     </span>
                   </button>
-                  {s.status === 'completed' && (
-                    <button type="button" className="small sale-share" disabled={sharing === s.id}
-                      aria-label={`Bagikan struk ${s.sale_no} sebagai foto`} onClick={() => shareImage(s)}>
-                      {sharing === s.id ? 'Menyiapkan…' : 'Bagikan struk (foto)'}
-                    </button>
-                  )}
                 </li>
               )
             })}
