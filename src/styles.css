@@ -127,6 +127,7 @@ button.danger-outline { color: #b3261e; border-color: #b3261e; }
 .sale-row.void { opacity: 0.7; }
 .sale-right { display: grid; justify-items: end; gap: 0.2rem; font-variant-numeric: tabular-nums; }
 .badge.st-ok { background: #e4f6e8; color: #14502a; }
+.badge.st-unpaid { background: #e3eefc; color: #1d4a85; }
 .badge.st-pending { background: var(--warn-bg); color: var(--warn-ink); }
 .badge.st-void { background: var(--bad-bg); color: var(--bad-ink); }
 

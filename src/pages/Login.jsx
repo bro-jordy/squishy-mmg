@@ -20,7 +20,7 @@ export default function Login() {
 
   return (
     <form className="login card" onSubmit={onSubmit}>
-      <h1>Squishy MMG</h1>
+      <h1>Squishy Zoyu</h1>
       <label>
         Email
         <input type="email" autoComplete="username" required value={email}

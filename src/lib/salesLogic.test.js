@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { checkout, confirmPayment, editSale, filterByPayment, salesInRange, voidSale, SaleError } from './salesLogic.js'
+import { checkout, confirmPayment, editSale, filterByPayment, payHold, salesInRange, voidSale, SaleError } from './salesLogic.js'
 import { initState, stockOf, stockMap } from './stockLogic.js'
 import { updateProduct, updateVariant } from './masterLogic.js'
 import { jakartaDateKey, jakartaDayRange } from './format.js'
@@ -212,4 +212,34 @@ test('filter pembayaran: semua / tunai / QRIS', () => {
   assert.equal(filterByPayment(all, 'all').length, 2)
   assert.deepEqual(filterByPayment(all, 'cash').map((x) => x.payment_method), ['cash'])
   assert.deepEqual(filterByPayment(all, 'qris').map((x) => x.payment_method), ['qris'])
+})
+
+test('pesanan ditahan: stok langsung berkurang, belum bayar, lalu ditandai sudah bayar', () => {
+  const s = base()
+  const v = vid(s, 'A12', 'Ungu')
+  const h = checkout(s, { idempotencyKey: newId(), hold: true, paymentMethod: 'cash', items: [{ variantId: v, qty: 2 }] }, NOW)
+  const sale = h.state.sales[0]
+  assert.equal(stockOf(h.state, v), stockOf(s, v) - 2)
+  assert.equal(sale.payment_status, 'unpaid')
+  assert.equal(sale.payment_method, null)
+  assert.equal(sale.payment_confirmed_at, null)
+  assert.equal(filterByPayment(h.state.sales, 'unpaid').length, 1)
+  assert.equal(filterByPayment(h.state.sales, 'cash').length, 0)
+
+  const qris = payHold(h.state, { saleId: sale.id, method: 'qris', confirmed: false }, NOW)
+  assert.equal(qris.sales[0].payment_status, 'unconfirmed')
+  const paid = payHold(h.state, { saleId: sale.id, method: 'cash' }, NOW)
+  assert.equal(paid.sales[0].payment_status, 'confirmed')
+  assert.equal(paid.sales[0].payment_method, 'cash')
+  assert.equal(stockOf(paid, v), stockOf(s, v) - 2) // stok tidak berubah saat bayar
+  assert.throws(() => payHold(paid, { saleId: sale.id, method: 'cash' }, NOW), SaleError) // sudah bayar
+  assert.throws(() => payHold(h.state, { saleId: sale.id, method: 'kartu' }, NOW), /Metode/)
+})
+
+test('pesanan ditahan yang dibatalkan (void) mengembalikan stok', () => {
+  const s = base()
+  const v = vid(s, 'A12', 'Ungu')
+  const h = checkout(s, { idempotencyKey: newId(), hold: true, items: [{ variantId: v, qty: 1 }] }, NOW)
+  const done = voidSale(h.state, { saleId: h.state.sales[0].id, reason: 'batal pesan' }, NOW).state
+  assert.equal(stockOf(done, v), stockOf(s, v))
 })

@@ -5,14 +5,15 @@ import { useStore } from '../lib/store.jsx'
 
 export function saleStatus(sale) {
   if (sale.status === 'void') return { key: 'void', label: 'Void' }
+  if (sale.payment_status === 'unpaid') return { key: 'unpaid', label: 'Belum dibayar' }
   if (sale.payment_status !== 'confirmed') return { key: 'pending', label: 'Pembayaran belum dikonfirmasi' }
   return { key: 'ok', label: 'Selesai' }
 }
 
 const METHOD = { cash: 'Tunai', qris: 'QRIS' }
 
-// Judul struk (sama untuk semua toko). Ganti di sini kalau mau, mis. 'MMG Squishy'.
-const RECEIPT_TITLE = 'Squishy MMG'
+// Judul struk (sama untuk semua toko). Ganti di sini kalau mau, mis. 'Zoyu Squishy'.
+const RECEIPT_TITLE = 'Squishy Zoyu'
 
 // Struk + detail transaksi. Bagian struk bisa dicetak / disimpan PDF lewat dialog
 // cetak browser (lihat @media print di styles.css); tombol-tombol tidak ikut tercetak.
@@ -23,6 +24,23 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const st = saleStatus(sale)
+  const [paying, setPaying] = useState(false)
+  const [payMethod, setPayMethod] = useState('cash')
+  const [payChecked, setPayChecked] = useState(false)
+
+  async function confirmPay(e) {
+    e.preventDefault()
+    if (busy || (payMethod === 'qris' && !payChecked)) return
+    setBusy(true)
+    setError('')
+    try {
+      await api.payHold({ saleId: sale.id, method: payMethod, confirmed: payMethod === 'cash' || payChecked })
+      onChanged(`Transaksi ${sale.sale_no} sudah dibayar (${METHOD[payMethod]})`)
+    } catch (err) {
+      setError(err.message || 'Gagal menyimpan pembayaran. Coba lagi.')
+      setBusy(false)
+    }
+  }
 
   async function confirmVoid(e) {
     e.preventDefault()
@@ -40,7 +58,7 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
 
   return (
     <Modal title={justSaved ? 'Transaksi tersimpan' : 'Detail transaksi'} onClose={onClose} className="receipt-dialog">
-      {justSaved && <p className="notice no-print" role="status">Stok sudah dikurangi.</p>}
+      {justSaved && <p className="notice no-print" role="status">{sale.payment_status === 'unpaid' ? 'Pesanan disimpan, belum dibayar. Stok sudah dikurangi; tandai sudah bayar nanti lewat menu Transaksi.' : 'Stok sudah dikurangi.'}</p>}
       {justSaved && cash && (
         <p className="cash-result no-print" role="status">
           Uang diterima {formatRupiah(cash.received)}<br />
@@ -71,7 +89,7 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
           </tfoot>
         </table>
         <p className="receipt-meta">
-          Bayar: {METHOD[sale.payment_method]} · {st.label}
+          Bayar: {sale.payment_method ? `${METHOD[sale.payment_method]} · ` : ''}{st.label}
           {sale.status === 'void' && <><br />Alasan void: {sale.void_reason}</>}
         </p>
         <p className="receipt-thanks">Terima kasih!</p>
@@ -85,7 +103,27 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
         {sale.edited_at && <><br />Diedit owner: <b>{formatDateTimeJakarta(sale.edited_at)}</b></>}
       </p>
 
-      {voiding ? (
+      {paying ? (
+        <form className="form no-print" onSubmit={confirmPay}>
+          <div className="segmented" role="group" aria-label="Metode pembayaran">
+            <button type="button" aria-pressed={payMethod === 'cash'} onClick={() => setPayMethod('cash')}>Tunai</button>
+            <button type="button" aria-pressed={payMethod === 'qris'} onClick={() => setPayMethod('qris')}>QRIS</button>
+          </div>
+          {payMethod === 'qris' && (
+            <label className="check">
+              <input type="checkbox" checked={payChecked} onChange={(e) => setPayChecked(e.target.checked)} />
+              Saya sudah cek: {formatRupiah(sale.total)} sudah masuk di GoPay Merchant
+            </label>
+          )}
+          {error && <p className="error" role="alert">{error}</p>}
+          <div className="dialog-actions">
+            <button type="button" onClick={() => setPaying(false)}>Batal</button>
+            <button type="submit" className="primary" disabled={busy || (payMethod === 'qris' && !payChecked)}>
+              {busy ? 'Menyimpan…' : 'Tandai sudah bayar'}
+            </button>
+          </div>
+        </form>
+      ) : voiding ? (
         <form className="form no-print" onSubmit={confirmVoid}>
           <label>
             Alasan void (wajib)
@@ -102,6 +140,9 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
         </form>
       ) : (
         <div className="dialog-actions no-print">
+          {sale.status === 'completed' && sale.payment_status === 'unpaid' && (
+            <button type="button" className="primary" onClick={() => setPaying(true)}>Sudah bayar</button>
+          )}
           {isAdmin && sale.status === 'completed' && (
             <button type="button" className="danger-outline" onClick={() => setVoiding(true)}>Void</button>
           )}

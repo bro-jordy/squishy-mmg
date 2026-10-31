@@ -1,7 +1,7 @@
-# Squishy MMG — Project Brief untuk Claude
+# Squishy Zoyu — Project Brief untuk Claude
 
 ## 1. Tujuan Project
-Bangun aplikasi web/PWA sederhana untuk operasional toko **Squishy MMG**. Aplikasi dipakai pemilik toko untuk mengelola master barang dan stok, menjalankan kasir, mencatat pembayaran, melihat laporan penjualan, serta menghitung pembagian **25% dan 75%** agar pemilik tahu nominal yang harus disetor.
+Bangun aplikasi web/PWA sederhana untuk operasional toko **Squishy Zoyu**. Aplikasi dipakai pemilik toko untuk mengelola master barang dan stok, menjalankan kasir, mencatat pembayaran, melihat laporan penjualan, serta menghitung pembagian **25% dan 75%** agar pemilik tahu nominal yang harus disetor.
 
 Aplikasi harus nyaman dipakai dari iPhone, Android, dan desktop. Fokus awal satu toko; jangan membangun kompleksitas multi-toko sekarang.
 
@@ -52,7 +52,7 @@ Alur:
 4. Tampilkan subtotal dan total.
 5. Pilih pembayaran tunai atau QRIS statis.
 6. Untuk QRIS, pelanggan scan QR toko; kasir mengecek pembayaran secara manual di **GoPay Merchant**.
-7. Kasir baru mengonfirmasi pembayaran di Squishy MMG setelah memeriksa GoPay Merchant.
+7. Kasir baru mengonfirmasi pembayaran di Squishy Zoyu setelah memeriksa GoPay Merchant.
 8. Simpan transaksi, kurangi stok, lalu tampilkan ringkasan dan struk yang dapat dicetak/disimpan sebagai PDF melalui browser.
 
 Pembayaran:
@@ -163,7 +163,7 @@ Claude boleh menyesuaikan setelah audit, tetapi pertimbangkan:
 Checkout dan void harus konsisten, aman, dan idempotent. Jangan mengandalkan pencocokan nama produk untuk mengubah stok.
 
 ## 11. UI/UX
-- Nama aplikasi: **Squishy MMG**.
+- Nama aplikasi: **Squishy Zoyu**.
 - Desain bersih, ramah, sederhana, dan cepat dipakai saat melayani pelanggan.
 - Mobile-first dan responsif.
 - Navigasi: Dashboard, Kasir, Produk/Master Barang, Stok, Transaksi, Setoran 25%/75%, Pengaturan.
@@ -220,4 +220,4 @@ Mulai dari **Fase 0 — Audit dan rencana**. Baca brief ini dan periksa reposito
 4. Rencana implementasi bertahap sesuai project saat ini.
 5. Data master barang yang diperlukan untuk impor.
 
-Gunakan JavaScript, bukan TypeScript. Aplikasi kasir dan dashboard pembagian 25%/75% adalah fitur inti Squishy MMG.
+Gunakan JavaScript, bukan TypeScript. Aplikasi kasir dan dashboard pembagian 25%/75% adalah fitur inti Squishy Zoyu.

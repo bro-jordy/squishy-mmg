@@ -250,7 +250,7 @@ export function createApi({ store, user, role, isPlatformOwner = false }) {
     },
 
     // ---- Penjualan ----
-    // input: { idempotencyKey, paymentMethod: 'cash'|'qris', paymentConfirmed, customerName,
+    // input: { idempotencyKey, paymentMethod: 'cash'|'qris', paymentConfirmed, hold (pesanan ditahan), customerName,
     //          note, items: [{ variantId, qty }] }  -> id transaksi.
     // Dipanggil SETELAH kasir mengonfirmasi pembayaran. Key yang sama = transaksi yang sama.
     // Nama kasir diambil dari akun yang login (tercatat di transaksi, tidak di struk).
@@ -258,6 +258,17 @@ export function createApi({ store, user, role, isPlatformOwner = false }) {
       if (LOCAL_MODE) {
         const withCashier = { ...input, cashierId: user.id, cashierName: user.nama, storeKode: store.kode }
         return (await mutateLocal(storeId, (s) => salesLogic.checkout(s, withCashier))).saleId
+      }
+      if (input.hold) {
+        const { data, error } = await supabase.rpc('hold_sale', {
+          p_store_id: storeId,
+          p_idempotency_key: input.idempotencyKey,
+          p_items: input.items.map((i) => ({ variant_id: i.variantId, qty: i.qty })),
+          p_customer_name: input.customerName || null,
+          p_note: input.note || null,
+        })
+        if (error) throw dbError(error)
+        return data
       }
       const { data, error } = await supabase.rpc('checkout', {
         p_store_id: storeId,
@@ -270,6 +281,16 @@ export function createApi({ store, user, role, isPlatformOwner = false }) {
       })
       if (error) throw dbError(error)
       return data
+    },
+
+    // Tandai pesanan ditahan sudah dibayar. method: 'cash'|'qris'; QRIS lunas bila confirmed.
+    async payHold({ saleId, method, confirmed }) {
+      if (LOCAL_MODE) {
+        await mutateLocal(storeId, (s) => ({ state: salesLogic.payHold(s, { saleId, method, confirmed }) }))
+        return
+      }
+      const { error } = await supabase.rpc('pay_hold', { p_sale_id: saleId, p_method: method, p_confirmed: Boolean(confirmed) })
+      if (error) throw dbError(error)
     },
 
     // Transaksi pada rentang tanggal Jakarta [from, to], terbaru dulu, lengkap dengan item.

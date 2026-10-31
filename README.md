@@ -1,6 +1,6 @@
-# Squishy MMG
+# Squishy Zoyu
 
-Aplikasi kasir, master barang, stok, dan rekap pembagian 25%/75% untuk toko Squishy MMG.
+Aplikasi kasir, master barang, stok, dan rekap pembagian 25%/75% untuk toko Squishy Zoyu.
 React + JavaScript + Vite; backend Supabase (Auth + PostgreSQL + RLS); deploy ke Vercel.
 Brief lengkap: `squishy_mmg_claude_project_brief.md`.
 

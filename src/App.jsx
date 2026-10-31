@@ -35,7 +35,7 @@ function Shell() {
 
   if (status === 'loading') return <p className="center-note" role="status">Memuat…</p>
   if (status === 'no-profile') {
-    return <Notice title="Akun belum terdaftar">Akun ini belum didaftarkan di Squishy MMG (atau sudah dinonaktifkan). Hubungi admin.</Notice>
+    return <Notice title="Akun belum terdaftar">Akun ini belum didaftarkan di Squishy Zoyu (atau sudah dinonaktifkan). Hubungi admin.</Notice>
   }
   if (status === 'no-store') {
     return <Notice title="Belum ada toko">Akun ini belum terdaftar di toko mana pun, atau aksesnya dinonaktifkan. Hubungi admin toko.</Notice>

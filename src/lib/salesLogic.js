@@ -10,13 +10,13 @@ const labelOf = (v) => [v.varian, v.warna].filter(Boolean).join(' · ') || 'Stan
 
 // items: [{ variantId, qty }]. Mengembalikan { state, saleId, created }.
 export function checkout(state, input, now = new Date()) {
-  const { idempotencyKey, paymentMethod, paymentConfirmed, items, customerName, note, cashierId, cashierName, storeKode = 'MMG' } = input
+  const { idempotencyKey, paymentMethod, paymentConfirmed, hold = false, items, customerName, note, cashierId, cashierName, storeKode = 'MMG' } = input
   if (!idempotencyKey) throw new SaleError('idempotency_key wajib diisi')
 
   const existing = state.sales.find((s) => s.idempotency_key === idempotencyKey)
   if (existing) return { state, saleId: existing.id, created: false }
 
-  if (!['cash', 'qris'].includes(paymentMethod)) {
+  if (!hold && !['cash', 'qris'].includes(paymentMethod)) {
     throw new SaleError(`Metode pembayaran tidak valid: ${paymentMethod}`)
   }
   if (!Array.isArray(items) || items.length === 0) throw new SaleError('Keranjang kosong')
@@ -51,7 +51,8 @@ export function checkout(state, input, now = new Date()) {
     total += qty * p.price
   }
 
-  const confirmed = paymentMethod === 'cash' || Boolean(paymentConfirmed)
+  // hold = pesanan ditahan: stok sudah dikurangi, belum bayar (metode kosong)
+  const confirmed = !hold && (paymentMethod === 'cash' || Boolean(paymentConfirmed))
   const day = jakartaDateKey(now)
   const counter = (state.saleCounters[day] ?? 0) + 1
   const id = `s${state.nextSaleNo}`
@@ -68,8 +69,8 @@ export function checkout(state, input, now = new Date()) {
     idempotency_key: idempotencyKey,
     sold_at: now.toISOString(),
     customer_name: customerName?.trim() || null,
-    payment_method: paymentMethod,
-    payment_status: confirmed ? 'confirmed' : 'unconfirmed',
+    payment_method: hold ? null : paymentMethod,
+    payment_status: hold ? 'unpaid' : confirmed ? 'confirmed' : 'unconfirmed',
     payment_confirmed_at: confirmed ? now.toISOString() : null,
     status: 'completed',
     total,
@@ -203,6 +204,23 @@ export function confirmPayment(state, saleId, now = new Date()) {
   }
 }
 
+// Tandai pesanan ditahan sudah dibayar. Padanan pay_hold() di db/migrations/2026-10-31_hold_sale.sql.
+export function payHold(state, { saleId, method, confirmed = false }, now = new Date()) {
+  if (!['cash', 'qris'].includes(method)) throw new SaleError(`Metode pembayaran tidak valid: ${method}`)
+  const sale = state.sales.find((s) => s.id === saleId)
+  if (!sale) throw new SaleError('Transaksi tidak ditemukan')
+  if (sale.status !== 'completed' || sale.payment_status !== 'unpaid') {
+    throw new SaleError('Pesanan ini tidak sedang menunggu pembayaran')
+  }
+  const ok = method === 'cash' || Boolean(confirmed)
+  return {
+    ...state,
+    sales: state.sales.map((s) => s.id === saleId
+      ? { ...s, payment_method: method, payment_status: ok ? 'confirmed' : 'unconfirmed', payment_confirmed_at: ok ? now.toISOString() : null }
+      : s),
+  }
+}
+
 // Transaksi dalam rentang tanggal Jakarta [from, to] (YYYY-MM-DD), terbaru dulu.
 // createdBy diisi untuk kasir: hanya transaksi buatannya sendiri.
 export function salesInRange(state, from, to, createdBy = null) {
@@ -214,7 +232,8 @@ export function salesInRange(state, from, to, createdBy = null) {
     .sort((a, b) => (a.sold_at < b.sold_at ? 1 : a.sold_at > b.sold_at ? -1 : b.id.localeCompare(a.id, 'en', { numeric: true })))
 }
 
-// Saring transaksi menurut metode bayar: 'all' | 'cash' | 'qris'.
+// Saring transaksi: 'all' | 'cash' | 'qris' | 'unpaid' (pesanan ditahan, belum bayar).
 export function filterByPayment(sales, method) {
+  if (method === 'unpaid') return sales.filter((s) => s.payment_status === 'unpaid')
   return method === 'cash' || method === 'qris' ? sales.filter((s) => s.payment_method === method) : sales
 }

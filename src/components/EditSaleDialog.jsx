@@ -9,7 +9,7 @@ const toInt = (v) => (/^\d+$/.test(String(v).trim()) ? Number(v) : NaN)
 // Total dihitung dari item. Setiap edit wajib beralasan dan tercatat di database.
 export default function EditSaleDialog({ sale, onClose, onSaved }) {
   const { api } = useStore()
-  const [method, setMethod] = useState(sale.payment_method)
+  const [method, setMethod] = useState(sale.payment_method ?? 'cash')
   const [confirmed, setConfirmed] = useState(sale.payment_status === 'confirmed')
   const [items, setItems] = useState(() => sale.sale_items.map((i) => ({
     variantId: i.variant_id, label: `${i.product_name} · ${i.variant_label}`, qty: String(i.qty), price: String(i.unit_price),

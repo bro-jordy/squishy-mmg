@@ -84,7 +84,7 @@ function Sidebar({ items, collapsed, onToggle }) {
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-head">
         <span className="brand-mark" aria-hidden="true">S</span>
-        <strong className="brand-name">Squishy MMG</strong>
+        <strong className="brand-name">Squishy Zoyu</strong>
         <button type="button" className="icon-btn toggle" onClick={onToggle}
           aria-label={collapsed ? 'Lebarkan menu' : 'Kecilkan menu'} aria-expanded={!collapsed}>
           {collapsed ? <IconChevronRight /> : <IconChevronLeft />}
@@ -201,7 +201,7 @@ export default function Layout() {
   return (
     <div className="shell">
       <header className="topbar">
-        <strong className="brand">Squishy MMG</strong>
+        <strong className="brand">Squishy Zoyu</strong>
         <StoreSwitcher className="on-brand" />
         <AccountMenu />
       </header>

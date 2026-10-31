@@ -5,8 +5,8 @@ import SaleDialog, { saleStatus } from '../components/SaleDialog.jsx'
 import EditSaleDialog from '../components/EditSaleDialog.jsx'
 import { filterByPayment } from '../lib/salesLogic'
 
-const METHOD = { cash: 'Tunai', qris: 'QRIS' }
-const METHOD_FILTERS = [['all', 'Semua'], ['qris', 'QRIS'], ['cash', 'Tunai']]
+const METHOD = { cash: 'Tunai', qris: 'QRIS', unpaid: 'Belum bayar' }
+const METHOD_FILTERS = [['all', 'Semua'], ['qris', 'QRIS'], ['cash', 'Tunai'], ['unpaid', 'Belum bayar']]
 
 export default function Transaksi() {
   const { api, isAdmin, isPlatformOwner } = useStore()
@@ -70,7 +70,7 @@ export default function Transaksi() {
         <>
           <p className="muted">
             {formatDateJakarta(from)}{from !== to && ` – ${formatDateJakarta(to)}`} ·{' '}
-            {method !== 'all' && `${METHOD[method]} · `}{counted.length} transaksi selesai · <b>{formatRupiah(sum)}</b>
+            {method !== 'all' && `${METHOD[method]} · `}{counted.length} transaksi selesai{method === 'unpaid' && ` · ${shown.filter((s) => s.status === 'completed').length} menunggu bayar`} · <b>{formatRupiah(sum)}</b>
           </p>
           {shown.length === 0 && <p className="muted">Belum ada transaksi.</p>}
           <ul className="sales">
@@ -83,7 +83,7 @@ export default function Transaksi() {
                     <span>
                       <b>{s.sale_no}</b>
                       <br /><small className="muted">
-                        {formatTimeJakarta(s.sold_at)} · {METHOD[s.payment_method]}
+                        {formatTimeJakarta(s.sold_at)} · {METHOD[s.payment_method ?? 'unpaid']}
                         {s.customer_name ? ` · ${s.customer_name}` : ''} · {s.sale_items.length} barang
                         {isAdmin && s.cashier_name ? ` · kasir: ${s.cashier_name}` : ''}
                       </small>

@@ -32,7 +32,7 @@ for f in db/tests/00_stub_supabase.sql db/schema.sql db/seed.sql db/seed.sql; do
 done
 echo "skema + seed (dua kali) OK"
 
-for f in db/tests/01_core.sql db/tests/02_master.sql db/tests/03_reports.sql db/tests/04_tenancy.sql db/tests/05_edit_sale.sql db/tests/06_transfer_stock.sql; do
+for f in db/tests/01_core.sql db/tests/02_master.sql db/tests/03_reports.sql db/tests/04_tenancy.sql db/tests/05_edit_sale.sql db/tests/06_transfer_stock.sql db/tests/07_hold_sale.sql; do
   out="$(q t -f "$f" 2>&1 | grep -v '^$' | grep -v '^00000000' || true)"
   echo "$f -> $out"
   case "$out" in *LOLOS*) ;; *) echo "GAGAL di $f"; exit 1 ;; esac

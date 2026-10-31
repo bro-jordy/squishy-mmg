@@ -1,5 +1,5 @@
 -- =====================================================================
--- Squishy MMG — skema database multi-toko (Supabase / PostgreSQL 15+)
+-- Squishy Zoyu — skema database multi-toko (Supabase / PostgreSQL 15+)
 -- Satu aplikasi, satu database, BEBERAPA TOKO yang datanya terpisah penuh
 -- (barang, stok, transaksi, setoran). Harga = integer Rupiah.
 -- Zona waktu bisnis = Asia/Jakarta.
@@ -163,8 +163,8 @@ create table sales (
   idempotency_key       uuid not null unique,                       -- cegah checkout ganda
   sold_at               timestamptz not null default now(),
   customer_name         text,                                       -- catatan pribadi, opsional
-  payment_method        text not null check (payment_method in ('cash', 'qris')),
-  payment_status        text not null check (payment_status in ('unconfirmed', 'confirmed')),
+  payment_method        text check (payment_method in ('cash', 'qris')),   -- kosong = pesanan ditahan (belum bayar)
+  payment_status        text not null check (payment_status in ('unpaid', 'unconfirmed', 'confirmed')),
   payment_confirmed_at  timestamptz,
   status                text not null default 'completed' check (status in ('completed', 'void')),
   total                 integer not null default 0 check (total >= 0),
@@ -177,7 +177,8 @@ create table sales (
   cashier_name          text,                                       -- nama kasir saat transaksi (snapshot; tidak dicetak di struk)
   created_at            timestamptz not null default now(),
   unique (id, store_id),
-  check (payment_method <> 'cash' or payment_status = 'confirmed'),
+  check ((payment_status = 'unpaid') = (payment_method is null)),
+  check (payment_method is distinct from 'cash' or payment_status = 'confirmed'),
   check (payment_status <> 'confirmed' or payment_confirmed_at is not null),
   check (status <> 'void' or (void_reason is not null and btrim(void_reason) <> '' and voided_at is not null))
 );
@@ -546,6 +547,61 @@ begin
    where id = p_sale_id and status = 'completed' and payment_status = 'unconfirmed';
 end $$;
 
+-- Buat pesanan ditahan. Memakai checkout() (stok dicek & dikurangi), lalu menandainya belum bayar.
+create or replace function hold_sale(
+  p_store_id        uuid,
+  p_idempotency_key uuid,
+  p_items           jsonb,
+  p_customer_name   text default null,
+  p_note            text default null
+) returns uuid
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_sale_id uuid;
+begin
+  if not can_access(p_store_id) then
+    raise exception 'Tidak diizinkan' using errcode = '42501';
+  end if;
+  -- key yang sama = pesanan yang sama (retry aman), jangan diubah lagi
+  select id into v_sale_id from sales where idempotency_key = p_idempotency_key and store_id = p_store_id;
+  if found then return v_sale_id; end if;
+
+  v_sale_id := checkout(p_store_id, p_idempotency_key, 'qris', false, p_items, p_customer_name, p_note);
+  update sales
+     set payment_method = null, payment_status = 'unpaid', payment_confirmed_at = null
+   where id = v_sale_id;
+  return v_sale_id;
+end $$;
+
+-- Tandai pesanan ditahan sudah dibayar: pilih metode. Tunai langsung lunas;
+-- QRIS lunas bila p_confirmed (sudah cek GoPay Merchant), kalau tidak = belum dikonfirmasi.
+-- Admin toko, atau kasir pembuat pesanan.
+create or replace function pay_hold(p_sale_id uuid, p_method text, p_confirmed boolean default false)
+returns void
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  s sales%rowtype;
+  v_confirmed boolean;
+begin
+  select * into s from sales where id = p_sale_id for update;
+  if not found or not can_access(s.store_id)
+     or not (is_admin(s.store_id) or s.created_by = auth.uid()) then
+    raise exception 'Tidak diizinkan' using errcode = '42501';
+  end if;
+  if p_method not in ('cash', 'qris') then
+    raise exception 'Metode pembayaran tidak valid: %', p_method;
+  end if;
+  if s.status <> 'completed' or s.payment_status <> 'unpaid' then
+    raise exception 'Pesanan ini tidak sedang menunggu pembayaran';
+  end if;
+  v_confirmed := (p_method = 'cash') or coalesce(p_confirmed, false);
+  update sales
+     set payment_method = p_method,
+         payment_status = case when v_confirmed then 'confirmed' else 'unconfirmed' end,
+         payment_confirmed_at = case when v_confirmed then now() end
+   where id = p_sale_id;
+end $$;
+
 -- Tambah produk baru + semua variannya dalam satu langkah (atomik), admin toko.
 -- p_variants: [{"varian": "Maltose", "warna": "Pink", "stock": 3}, ...]
 -- Teks kosong atau "-" dianggap tidak ada. Stok awal otomatis jadi movement 'opening'.
@@ -815,6 +871,8 @@ grant delete on settlements to authenticated;
 grant execute on function is_owner(), can_access(uuid), is_admin(uuid), jakarta_today() to authenticated;
 grant execute on function checkout(uuid, uuid, text, boolean, jsonb, text, text) to authenticated;
 grant execute on function void_sale(uuid, text)                           to authenticated;
+grant execute on function hold_sale(uuid, uuid, jsonb, text, text)        to authenticated;
+grant execute on function pay_hold(uuid, text, boolean)                   to authenticated;
 grant execute on function adjust_stock(uuid, text, integer, text)         to authenticated;
 grant execute on function bulk_opname(uuid, jsonb, text)                  to authenticated;
 grant execute on function confirm_payment(uuid)                           to authenticated;
