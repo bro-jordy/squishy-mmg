@@ -221,6 +221,17 @@ export function payHold(state, { saleId, method, confirmed = false }, now = new 
   }
 }
 
+// Ubah nama pembeli (owner; dicek pemanggil). Padanan set_sale_customer() di
+// db/migrations/2026-11-01_sale_customer.sql. Kosong = tanpa nama.
+export function setCustomer(state, { saleId, customerName }, now = new Date()) {
+  if (!state.sales.some((s) => s.id === saleId)) throw new SaleError('Transaksi tidak ditemukan')
+  const name = String(customerName ?? '').trim() || null
+  return {
+    ...state,
+    sales: state.sales.map((s) => (s.id === saleId ? { ...s, customer_name: name, edited_at: now.toISOString() } : s)),
+  }
+}
+
 // Transaksi dalam rentang tanggal Jakarta [from, to] (YYYY-MM-DD), terbaru dulu.
 // createdBy diisi untuk kasir: hanya transaksi buatannya sendiri.
 export function salesInRange(state, from, to, createdBy = null) {

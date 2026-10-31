@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { checkout, confirmPayment, editSale, filterByPayment, payHold, salesInRange, voidSale, SaleError } from './salesLogic.js'
+import { checkout, confirmPayment, editSale, filterByPayment, payHold, salesInRange, setCustomer, voidSale, SaleError } from './salesLogic.js'
 import { initState, stockOf, stockMap } from './stockLogic.js'
 import { updateProduct, updateVariant } from './masterLogic.js'
 import { jakartaDateKey, jakartaDayRange } from './format.js'
@@ -242,4 +242,17 @@ test('pesanan ditahan yang dibatalkan (void) mengembalikan stok', () => {
   const h = checkout(s, { idempotencyKey: newId(), hold: true, items: [{ variantId: v, qty: 1 }] }, NOW)
   const done = voidSale(h.state, { saleId: h.state.sales[0].id, reason: 'batal pesan' }, NOW).state
   assert.equal(stockOf(done, v), stockOf(s, v))
+})
+
+test('setCustomer mengubah/mengosongkan nama pembeli tanpa menyentuh stok dan total', () => {
+  const s = base()
+  const v = vid(s, 'A12', 'Ungu')
+  const r = buy(s, [{ variantId: v, qty: 1 }], { customerName: 'Apri' })
+  const id = r.state.sales[0].id
+  const a = setCustomer(r.state, { saleId: id, customerName: '  April  ' }, NOW)
+  assert.equal(a.sales[0].customer_name, 'April')
+  assert.equal(a.sales[0].total, r.state.sales[0].total)
+  assert.equal(stockOf(a, v), stockOf(r.state, v))
+  assert.equal(setCustomer(a, { saleId: id, customerName: '' }, NOW).sales[0].customer_name, null)
+  assert.throws(() => setCustomer(a, { saleId: 'x', customerName: 'a' }, NOW), SaleError)
 })

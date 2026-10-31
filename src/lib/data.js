@@ -360,6 +360,17 @@ export function createApi({ store, user, role, isPlatformOwner = false }) {
       if (error) throw dbError(error)
     },
 
+    // Ubah nama pembeli saja (HANYA owner platform); barang/harga/stok tidak berubah.
+    async setSaleCustomer({ saleId, customerName }) {
+      if (!isPlatformOwner) throw new Error('Hanya owner yang boleh mengedit transaksi')
+      if (LOCAL_MODE) {
+        await mutateLocal(storeId, (s) => ({ state: salesLogic.setCustomer(s, { saleId, customerName }) }))
+        return
+      }
+      const { error } = await supabase.rpc('set_sale_customer', { p_sale_id: saleId, p_customer_name: customerName || null })
+      if (error) throw dbError(error)
+    },
+
     // ---- Transfer stok antar toko (HANYA owner platform) ----
     // Katalog toko LAIN (untuk memilih barang tujuan/asal). Baris sama bentuknya dengan fetchCatalog.
     async fetchStoreCatalog(otherStoreId) {

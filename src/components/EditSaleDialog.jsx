@@ -15,6 +15,7 @@ export default function EditSaleDialog({ sale, onClose, onSaved }) {
     variantId: i.variant_id, label: `${i.product_name} · ${i.variant_label}`, qty: String(i.qty), price: String(i.unit_price),
   })))
   const [reason, setReason] = useState('')
+  const [customer, setCustomer] = useState(sale.customer_name ?? '')
   const [catalog, setCatalog] = useState([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -40,12 +41,27 @@ export default function EditSaleDialog({ sale, onClose, onSaved }) {
     setItems((xs) => [...xs, { variantId, label: `${r.display_name} · ${r.variant_label}`, qty: '1', price: String(r.price) }])
   }
 
+  // Nama pembeli disimpan sendiri (tanpa alasan, tanpa menyentuh barang/harga).
+  async function saveCustomer() {
+    if (busy) return
+    setBusy(true)
+    setError('')
+    try {
+      await api.setSaleCustomer({ saleId: sale.id, customerName: customer.trim() })
+      onSaved(`Nama pembeli ${sale.sale_no} disimpan`)
+    } catch (err) {
+      setError(err.message || 'Gagal menyimpan nama. Coba lagi.')
+      setBusy(false)
+    }
+  }
+
   async function submit(e) {
     e.preventDefault()
     if (busy || !valid || !reason.trim()) return
     setBusy(true)
     setError('')
     try {
+      if (customer.trim() !== (sale.customer_name ?? '')) await api.setSaleCustomer({ saleId: sale.id, customerName: customer.trim() })
       await api.editSale({ saleId: sale.id, paymentMethod: method, paymentConfirmed: confirmed, items: parsed, reason: reason.trim() })
       onSaved(`Transaksi ${sale.sale_no} diedit`)
     } catch (err) {
@@ -57,6 +73,14 @@ export default function EditSaleDialog({ sale, onClose, onSaved }) {
   return (
     <Modal title={`Edit ${sale.sale_no}`} onClose={onClose}>
       <form className="form" onSubmit={submit}>
+        <label>
+          Nama pembeli (opsional)
+          <input value={customer} onChange={(e) => setCustomer(e.target.value)} maxLength={80} />
+        </label>
+        {customer.trim() !== (sale.customer_name ?? '') && (
+          <button type="button" className="small" disabled={busy} onClick={saveCustomer}>Simpan nama saja</button>
+        )}
+
         <fieldset className="edit-method">
           <legend>Metode pembayaran</legend>
           <div className="segmented" role="group" aria-label="Metode pembayaran">
