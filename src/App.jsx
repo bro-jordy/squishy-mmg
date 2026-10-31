@@ -14,6 +14,7 @@ import MasterBarang from './pages/MasterBarang.jsx'
 import Stok from './pages/Stok.jsx'
 import OpnameMassal from './pages/OpnameMassal.jsx'
 import TransferStok from './pages/TransferStok.jsx'
+import BarangKeluar from './pages/BarangKeluar.jsx'
 import BagiHasil from './pages/BagiHasil.jsx'
 import Pengaturan from './pages/Pengaturan.jsx'
 import PengaturanUmum from './pages/PengaturanUmum.jsx'
@@ -55,6 +56,7 @@ function Shell() {
           <Route path="master" element={<MasterBarang />} />
           <Route path="stok" element={<Stok />} />
           <Route path="stok/opname" element={<OpnameMassal />} />
+          <Route path="keluar" element={<BarangKeluar />} />
           <Route path="transfer" element={<TransferStok />} />
         </Route>
         <Route path="bagi-hasil" element={<AdminOnly title="Bagi Hasil"><BagiHasil /></AdminOnly>} />

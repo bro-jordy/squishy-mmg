@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useStore } from '../lib/store.jsx'
 import { formatDateJakarta, formatRupiah, todayJakarta } from '../lib/format'
+import { downloadCsv } from '../lib/csv'
 import { exportCsv, exportRows, settlementBalance } from '../lib/reportLogic'
 import Basis from '../components/Basis.jsx'
 
@@ -68,15 +69,7 @@ export default function BagiHasil() {
       if (rows.length === 0) {
         setExpError('Tidak ada penjualan lunas pada periode ini.')
       } else {
-        const blob = new Blob([exportCsv(rows)], { type: 'text/csv;charset=utf-8' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `rekap-${store.kode}-${exp.from}${exp.from === exp.to ? '' : `_sd_${exp.to}`}.csv`
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-        URL.revokeObjectURL(url)
+        downloadCsv(`rekap-${store.kode}-${exp.from}${exp.from === exp.to ? '' : `_sd_${exp.to}`}.csv`, exportCsv(rows))
       }
     } catch {
       setExpError('Gagal menyiapkan export. Coba lagi.')

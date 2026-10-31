@@ -138,3 +138,23 @@ export function bulkOpname(state, { items, reason }, now = new Date()) {
     state: { ...state, nextId, movements: [...state.movements, ...movements] },
   }
 }
+
+// Riwayat barang keluar: dikeluarkan (rusak/hilang), retur ke pemilik, transfer keluar.
+// Terbaru dulu; from/to = tanggal Jakarta (YYYY-MM-DD), opsional.
+export const OUTGOING_TYPES = ['return_owner', 'damaged', 'transfer_out']
+
+export function outgoingMovements(state, { from = '', to = '' } = {}) {
+  const variants = new Map(state.variants.map((v) => [v.id, v]))
+  const products = new Map(state.products.map((p) => [p.id, p]))
+  return state.movements
+    .filter((m) => OUTGOING_TYPES.includes(m.movement_type))
+    .map((m) => {
+      const v = variants.get(m.variant_id)
+      const p = v && products.get(v.product_id)
+      return {
+        id: m.id, movement_type: m.movement_type, qty_delta: m.qty_delta, reason: m.reason, created_at: m.created_at,
+        sku: p?.sku ?? '', product_name: p?.name ?? '', variant_label: v ? [v.varian, v.warna].filter(Boolean).join(' · ') || 'Standar' : '',
+      }
+    })
+    .sort((a, b) => b.id - a.id)
+}

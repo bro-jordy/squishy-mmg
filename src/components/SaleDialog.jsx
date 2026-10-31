@@ -14,7 +14,7 @@ export function saleStatus(sale) {
 const METHOD = { cash: 'Tunai', qris: 'QRIS' }
 
 // Judul struk (sama untuk semua toko). Ganti di sini kalau mau, mis. 'Zoyu Squishy'.
-const RECEIPT_TITLE = 'Squishy Zoyu'
+export const RECEIPT_TITLE = 'Squishy Zoyu'
 
 // Struk + detail transaksi. Bagian struk bisa dicetak / disimpan PDF lewat dialog
 // cetak browser (lihat @media print di styles.css); tombol-tombol tidak ikut tercetak.

@@ -1,7 +1,7 @@
 import { LOCAL_MODE } from './mode'
 import { supabase } from './supabase'
 import { buildCatalog } from './catalog'
-import { adjust, bulkOpname as bulkOpnameLogic, movementsFor, stockMap, StockError } from './stockLogic'
+import { adjust, bulkOpname as bulkOpnameLogic, movementsFor, outgoingMovements, OUTGOING_TYPES, stockMap, StockError } from './stockLogic'
 import * as master from './masterLogic'
 import * as salesLogic from './salesLogic'
 import * as report from './reportLogic'
@@ -191,6 +191,26 @@ export function createApi({ store, user, role, isPlatformOwner = false }) {
         .limit(limit)
       if (error) throw error
       return data
+    },
+
+    // Riwayat barang keluar (dikeluarkan/rusak, retur ke pemilik, transfer keluar), terbaru dulu.
+    // Baris datar: { id, movement_type, qty_delta, reason, created_at, sku, product_name, variant_label }.
+    async fetchOutgoing() {
+      if (LOCAL_MODE) return outgoingMovements(await localState(storeId))
+      const { data, error } = await supabase
+        .from('stock_movements')
+        .select('id, movement_type, qty_delta, reason, created_at, product_variants(varian, warna, products(sku, name))')
+        .eq('store_id', storeId)
+        .in('movement_type', OUTGOING_TYPES)
+        .order('id', { ascending: false })
+        .limit(1000)
+      if (error) throw error
+      return data.map(({ product_variants: v, ...m }) => ({
+        ...m,
+        sku: v?.products?.sku ?? '',
+        product_name: v?.products?.name ?? '',
+        variant_label: [v?.varian, v?.warna].filter(Boolean).join(' · ') || 'Standar',
+      }))
     },
 
     // ---- Master barang (admin toko) ----
