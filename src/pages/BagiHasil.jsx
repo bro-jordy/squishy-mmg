@@ -3,6 +3,7 @@ import { useStore } from '../lib/store.jsx'
 import { formatDateJakarta, formatRupiah, todayJakarta } from '../lib/format'
 import { downloadCsv } from '../lib/csv'
 import { exportCsv, exportRows, settlementBalance } from '../lib/reportLogic'
+import PeriodPresets from '../components/PeriodPresets.jsx'
 import Basis from '../components/Basis.jsx'
 
 const STATUS_LABEL = { belum: 'Belum disetor', sebagian: 'Sebagian', lunas: 'Lunas', kelebihan: 'Kelebihan setor' }
@@ -121,6 +122,7 @@ export default function BagiHasil() {
       <h2>Export rekap</h2>
       <div className="card form">
         <p className="muted">File CSV (buka di Excel/Sheets): SKU, Nama Barang, Qty Terjual, Harga, Total, 25%, 75%. Hanya penjualan lunas.</p>
+        <PeriodPresets from={exp.from} to={exp.to} onPick={setExp} />
         <div className="filters">
           <label>Dari<input type="date" value={exp.from} max={exp.to} onChange={(e) => setExp((x) => ({ ...x, from: e.target.value }))} /></label>
           <label>Sampai<input type="date" value={exp.to} min={exp.from} onChange={(e) => setExp((x) => ({ ...x, to: e.target.value }))} /></label>

@@ -111,9 +111,18 @@ const addDays = (key, n) => {
   return d.toISOString().slice(0, 10)
 }
 
+// Tombol periode cepat (Transaksi, export Bagi Hasil, Dashboard).
+export const PERIOD_PRESETS = [
+  ['hari', 'Hari ini'], ['7hari', '7 hari'], ['bulan', 'Bulan ini'], ['bulanlalu', 'Bulan lalu'],
+]
+
 export function periodRange(preset, today) {
   if (preset === '7hari') return { from: addDays(today, -6), to: today }
   if (preset === 'bulan') return { from: `${today.slice(0, 8)}01`, to: today }
+  if (preset === 'bulanlalu') {
+    const last = addDays(`${today.slice(0, 8)}01`, -1) // hari terakhir bulan lalu
+    return { from: `${last.slice(0, 8)}01`, to: last }
+  }
   return { from: today, to: today }
 }
 

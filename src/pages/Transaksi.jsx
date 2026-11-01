@@ -3,10 +3,12 @@ import { useStore } from '../lib/store.jsx'
 import { formatDateJakarta, formatRupiah, formatTimeJakarta, todayJakarta } from '../lib/format'
 import SaleDialog, { saleStatus } from '../components/SaleDialog.jsx'
 import EditSaleDialog from '../components/EditSaleDialog.jsx'
-import { filterByPayment } from '../lib/salesLogic'
+import { filterByPaid, filterByPayment } from '../lib/salesLogic'
+import PeriodPresets from '../components/PeriodPresets.jsx'
 
 const METHOD = { cash: 'Tunai', qris: 'QRIS', unpaid: 'Belum bayar' }
-const METHOD_FILTERS = [['all', 'Semua'], ['qris', 'QRIS'], ['cash', 'Tunai'], ['unpaid', 'Belum bayar']]
+const METHOD_FILTERS = [['all', 'Semua'], ['qris', 'QRIS'], ['cash', 'Tunai']]
+const PAID_FILTERS = [['all', 'Semua'], ['lunas', 'Lunas'], ['belum', 'Belum lunas']]
 
 export default function Transaksi() {
   const { api, isAdmin, isPlatformOwner } = useStore()
@@ -16,6 +18,7 @@ export default function Transaksi() {
   const [sales, setSales] = useState(null)
   const [error, setError] = useState('')
   const [method, setMethod] = useState('all')
+  const [paid, setPaid] = useState('all')
   const [selected, setSelected] = useState(null)
   const [editing, setEditing] = useState(null)
   const [notice, setNotice] = useState('')
@@ -36,12 +39,12 @@ export default function Transaksi() {
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
-    const byMethod = filterByPayment(sales ?? [], method)
+    const byMethod = filterByPaid(filterByPayment(sales ?? [], method), paid)
     if (!q) return byMethod
     return byMethod.filter((s) =>
       [s.sale_no, s.customer_name ?? '', s.cashier_name ?? '', ...s.sale_items.map((i) => `${i.product_name} ${i.variant_label} ${i.sku}`)]
         .join(' ').toLowerCase().includes(q))
-  }, [sales, query, method])
+  }, [sales, query, method, paid])
 
   // Hanya transaksi selesai & pembayaran terkonfirmasi yang dihitung sebagai penjualan.
   const counted = shown.filter((s) => s.status === 'completed' && s.payment_status === 'confirmed')
@@ -52,9 +55,15 @@ export default function Transaksi() {
       <h1>Transaksi</h1>
       {notice && <p className="notice" role="status">{notice}</p>}
 
+      <PeriodPresets from={from} to={to} onPick={(r) => { setFrom(r.from); setTo(r.to) }} />
       <div className="filters">
         <label>Dari<input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></label>
         <label>Sampai<input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></label>
+      </div>
+      <div className="segmented" role="group" aria-label="Status pembayaran">
+        {PAID_FILTERS.map(([key, label]) => (
+          <button key={key} type="button" aria-pressed={paid === key} onClick={() => setPaid(key)}>{label}</button>
+        ))}
       </div>
       <div className="segmented" role="group" aria-label="Metode pembayaran">
         {METHOD_FILTERS.map(([key, label]) => (
@@ -70,7 +79,7 @@ export default function Transaksi() {
         <>
           <p className="muted">
             {formatDateJakarta(from)}{from !== to && ` – ${formatDateJakarta(to)}`} ·{' '}
-            {method !== 'all' && `${METHOD[method]} · `}{counted.length} transaksi selesai{method === 'unpaid' && ` · ${shown.filter((s) => s.status === 'completed').length} menunggu bayar`} · <b>{formatRupiah(sum)}</b>
+            {method !== 'all' && `${METHOD[method]} · `}{paid === 'belum' ? `${shown.filter((s) => s.status === 'completed').length} belum lunas` : `${counted.length} transaksi lunas`} · <b>{formatRupiah(sum)}</b>
           </p>
           {shown.length === 0 && <p className="muted">Belum ada transaksi.</p>}
           <ul className="sales">

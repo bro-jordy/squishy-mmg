@@ -244,6 +244,13 @@ export function salesInRange(state, from, to, createdBy = null) {
     .sort((a, b) => (a.sold_at < b.sold_at ? 1 : a.sold_at > b.sold_at ? -1 : b.id.localeCompare(a.id, 'en', { numeric: true })))
 }
 
+// Saring menurut kelunasan: 'all' | 'lunas' (selesai & terkonfirmasi) | 'belum' (selesai tapi belum bayar / belum dikonfirmasi).
+export function filterByPaid(sales, key) {
+  if (key === 'lunas') return sales.filter((s) => s.status === 'completed' && s.payment_status === 'confirmed')
+  if (key === 'belum') return sales.filter((s) => s.status === 'completed' && s.payment_status !== 'confirmed')
+  return sales
+}
+
 // Saring transaksi: 'all' | 'cash' | 'qris' | 'unpaid' (pesanan ditahan, belum bayar).
 export function filterByPayment(sales, method) {
   if (method === 'unpaid') return sales.filter((s) => s.payment_status === 'unpaid')

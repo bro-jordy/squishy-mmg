@@ -136,3 +136,10 @@ test('exportRows: gabung varian per SKU+nama+harga, hanya yang lunas, ada baris 
   assert.ok(csv.includes('A10;"Squishy ""Roti""";3;Rp 25.000;Rp 75.000;Rp 18.750;Rp 56.250'))
   assert.ok(csv.includes(';TOTAL;5;;Rp 155.000;Rp 38.750;Rp 116.250'))
 })
+
+test('periodRange bulan lalu, termasuk pergantian tahun', async () => {
+  const { periodRange } = await import('./reportLogic.js')
+  assert.deepEqual(periodRange('bulanlalu', '2026-11-01'), { from: '2026-10-01', to: '2026-10-31' })
+  assert.deepEqual(periodRange('bulanlalu', '2026-03-15'), { from: '2026-02-01', to: '2026-02-28' })
+  assert.deepEqual(periodRange('bulanlalu', '2027-01-09'), { from: '2026-12-01', to: '2026-12-31' })
+})

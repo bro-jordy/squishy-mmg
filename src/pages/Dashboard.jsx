@@ -9,6 +9,7 @@ const PRESETS = [
   { key: 'hari', label: 'Hari ini' },
   { key: '7hari', label: '7 hari' },
   { key: 'bulan', label: 'Bulan ini' },
+  { key: 'bulanlalu', label: 'Bulan lalu' },
   { key: 'kustom', label: 'Pilih tanggal' },
 ]
 

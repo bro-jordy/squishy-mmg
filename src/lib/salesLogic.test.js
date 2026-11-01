@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { checkout, confirmPayment, editSale, filterByPayment, payHold, salesInRange, setCustomer, voidSale, SaleError } from './salesLogic.js'
+import { checkout, confirmPayment, editSale, filterByPaid, filterByPayment, payHold, salesInRange, setCustomer, voidSale, SaleError } from './salesLogic.js'
 import { initState, stockOf, stockMap } from './stockLogic.js'
 import { updateProduct, updateVariant } from './masterLogic.js'
 import { jakartaDateKey, jakartaDayRange } from './format.js'
@@ -255,4 +255,16 @@ test('setCustomer mengubah/mengosongkan nama pembeli tanpa menyentuh stok dan to
   assert.equal(stockOf(a, v), stockOf(r.state, v))
   assert.equal(setCustomer(a, { saleId: id, customerName: '' }, NOW).sales[0].customer_name, null)
   assert.throws(() => setCustomer(a, { saleId: 'x', customerName: 'a' }, NOW), SaleError)
+})
+
+test('filterByPaid: lunas vs belum lunas (belum bayar + belum dikonfirmasi), void tidak ikut', () => {
+  const s = base()
+  const v = s.variants.find((x) => stockOf(s, x.id) >= 4).id
+  let st = buy(s, [{ variantId: v, qty: 1 }]).state
+  st = checkout(st, { idempotencyKey: newId(), hold: true, items: [{ variantId: v, qty: 1 }] }, NOW).state
+  st = checkout(st, { idempotencyKey: newId(), paymentMethod: 'qris', paymentConfirmed: false, items: [{ variantId: v, qty: 1 }] }, NOW).state
+  st = voidSale(st, { saleId: st.sales[2].id, reason: 'x' }, NOW).state
+  assert.equal(filterByPaid(st.sales, 'lunas').length, 1)
+  assert.equal(filterByPaid(st.sales, 'belum').length, 1)
+  assert.equal(filterByPaid(st.sales, 'all').length, 3)
 })
