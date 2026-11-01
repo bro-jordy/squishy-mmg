@@ -339,3 +339,12 @@ ol.plain { counter-reset: n; }
 .transfer-err { color: var(--warn-ink); }
 .transfer-history ul { margin: 0.3rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; }
 .transfer select, .transfer-route select { min-height: 44px; padding: 0 0.5rem; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: inherit; font: inherit; width: 100%; }
+
+/* Dialog: tombol X di kanan atas; aksi transaksi 1 baris (Void | Edit | Bagikan) */
+.dialog-x { position: absolute; top: 0.6rem; right: 0.6rem; width: 40px; height: 40px; min-height: 0; padding: 0; border-radius: 999px; font-size: 1.1rem; line-height: 1; }
+.sale-actions { display: grid; gap: 0.5rem; margin-top: 0.5rem; }
+.sale-actions-row { display: flex; gap: 0.5rem; }
+.sale-actions-row > button { flex: 1; min-width: 0; padding-left: 0.4rem; padding-right: 0.4rem; }
+.sale-actions-row > button.grow { flex: 2; }
+.sale-pay { width: 100%; }
+.receipt-dialog h2 { padding-right: 3rem; }

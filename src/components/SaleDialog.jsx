@@ -73,7 +73,7 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
   }
 
   return (
-    <Modal title={justSaved ? 'Transaksi tersimpan' : 'Detail transaksi'} onClose={onClose} className="receipt-dialog">
+    <Modal title={justSaved ? 'Transaksi tersimpan' : 'Detail transaksi'} onClose={onClose} className="receipt-dialog" showClose>
       {justSaved && <p className="notice no-print" role="status">{sale.payment_status === 'unpaid' ? 'Pesanan disimpan, belum dibayar. Stok sudah dikurangi; tandai sudah bayar nanti lewat menu Transaksi.' : 'Stok sudah dikurangi.'}</p>}
       {justSaved && cash && (
         <p className="cash-result no-print" role="status">
@@ -157,18 +157,19 @@ export default function SaleDialog({ sale, cash = null, justSaved = false, onClo
           </div>
         </form>
       ) : (
-        <div className="dialog-actions no-print">
+        <div className="sale-actions no-print">
           {sale.status === 'completed' && sale.payment_status === 'unpaid' && (
-            <button type="button" className="primary" onClick={() => setPaying(true)}>Sudah bayar</button>
+            <button type="button" className="primary sale-pay" onClick={() => setPaying(true)}>Sudah bayar</button>
           )}
-          {isAdmin && sale.status === 'completed' && (
-            <button type="button" className="danger-outline" onClick={() => setVoiding(true)}>Void</button>
-          )}
-          {onEdit && sale.status === 'completed' && <button type="button" onClick={onEdit}>Edit</button>}
-          {/* Cetak struk (dinonaktifkan; diganti bagikan foto). Kode cetak dibiarkan, styles.css @media print juga tetap.
-          <button type="button" onClick={() => window.print()}>Cetak struk</button> */}
-          <button type="button" disabled={busy} onClick={shareImage}>Bagikan struk (foto)</button>
-          <button type="button" className="primary" onClick={onClose}>{justSaved ? 'Selesai' : 'Tutup'}</button>
+          <div className="sale-actions-row">
+            {isAdmin && sale.status === 'completed' && (
+              <button type="button" className="danger-outline" onClick={() => setVoiding(true)}>Void</button>
+            )}
+            {onEdit && sale.status === 'completed' && <button type="button" onClick={onEdit}>Edit</button>}
+            {/* Cetak struk (dinonaktifkan; diganti bagikan foto). Kode cetak dibiarkan, styles.css @media print juga tetap.
+            <button type="button" onClick={() => window.print()}>Cetak struk</button> */}
+            <button type="button" className="grow" disabled={busy} onClick={shareImage}>Bagikan struk (foto)</button>
+          </div>
         </div>
       )}
     </Modal>

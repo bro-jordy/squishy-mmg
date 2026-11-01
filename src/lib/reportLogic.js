@@ -97,9 +97,10 @@ export function exportCsv(rows) {
     return /[";\n\r]/.test(t) ? `"${t.replaceAll('"', '""')}"` : t
   }
   const sum = (k) => rows.reduce((n, r) => n + r[k], 0)
+  const n = (v) => String(v).replace(/\B(?=(\d{3})+(?!\d))/g, '.') // pemisah ribuan: 1.234.000
   const lines = [['SKU', 'Nama Barang', 'Qty Terjual', 'Harga', 'Total', '25%', '75%']]
-  for (const r of rows) lines.push([r.sku, r.nama, r.qty, r.harga, r.total, r.bagian_25, r.bagian_75])
-  lines.push(['', 'TOTAL', sum('qty'), '', sum('total'), sum('bagian_25'), sum('bagian_75')])
+  for (const r of rows) lines.push([r.sku, r.nama, n(r.qty), n(r.harga), n(r.total), n(r.bagian_25), n(r.bagian_75)])
+  lines.push(['', 'TOTAL', n(sum('qty')), '', n(sum('total')), n(sum('bagian_25')), n(sum('bagian_75'))])
   return `\uFEFF${lines.map((l) => l.map(esc).join(';')).join('\r\n')}\r\n`
 }
 

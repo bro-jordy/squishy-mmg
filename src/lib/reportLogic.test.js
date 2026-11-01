@@ -133,6 +133,6 @@ test('exportRows: gabung varian per SKU+nama+harga, hanya yang lunas, ada baris 
     [['A2', 2, 80000, 20000, 60000], ['A10', 3, 75000, 18750, 56250]])
   const csv = exportCsv(rows)
   assert.ok(csv.startsWith('﻿SKU;Nama Barang;Qty Terjual;Harga;Total;25%;75%\r\n'))
-  assert.ok(csv.includes('A10;"Squishy ""Roti""";3;25000;75000;18750;56250'))
-  assert.ok(csv.includes(';TOTAL;5;;155000;38750;116250'))
+  assert.ok(csv.includes('A10;"Squishy ""Roti""";3;25.000;75.000;18.750;56.250'))
+  assert.ok(csv.includes(';TOTAL;5;;155.000;38.750;116.250'))
 })
