@@ -40,6 +40,28 @@ input { min-height: 44px; padding: 0 0.75rem; border-radius: 10px; border: 1px s
 .center-note { max-width: 420px; margin: 4rem auto; padding: 0 1rem; text-align: center; }
 .login { max-width: 360px; margin: 3rem auto; display: grid; gap: 0.9rem; }
 .login label { display: grid; gap: 0.3rem; font-size: 0.9rem; }
+.login-stage { --dark: #231a29; position: relative; min-height: 100dvh; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding-top: 1.5rem; background: var(--dark); transition: background 0.6s ease; }
+.login-stage.lit { background: var(--bg); }
+.lamp { position: relative; width: 120px; height: 90px; flex: none; }
+.lamp-shade { position: absolute; left: 20px; top: 0; width: 80px; height: 44px; border-radius: 80px 80px 6px 6px; background: #3a2d42; transition: background 0.6s; }
+.lamp-bulb { position: absolute; left: 50px; top: 40px; width: 20px; height: 20px; border-radius: 50%; background: #4a3b52; transition: background 0.4s, box-shadow 0.6s; }
+.lamp-beam { position: absolute; left: -90px; top: 52px; width: 300px; height: 460px; opacity: 0; pointer-events: none; background: linear-gradient(to bottom, color-mix(in srgb, var(--brand) 28%, transparent), transparent 85%); clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%); transition: opacity 0.6s; }
+.login-stage.lit .lamp-shade { background: var(--brand); }
+.login-stage.lit .lamp-bulb { background: #fff3c4; box-shadow: 0 0 28px 12px rgba(255, 214, 120, 0.7); }
+.login-stage.lit .lamp-beam { opacity: 1; }
+.cord-wrap { position: relative; z-index: 2; width: 44px; height: 110px; margin-left: 36px; margin-top: -26px; flex: none; }
+.cord { position: absolute; left: 21px; top: 0; width: 2px; background: #a99bb3; }
+.cord-bead { position: absolute; left: 11px; width: 22px; min-height: 40px; height: 40px; padding: 0; border: 0; border-radius: 12px; background: var(--brand); box-shadow: 0 0 14px color-mix(in srgb, var(--brand) 60%, transparent); cursor: grab; touch-action: none; }
+.cord-bead:active { cursor: grabbing; }
+.motion-tap .cord { transition: height 0.12s ease-out; }
+.motion-tap .cord-bead { transition: top 0.12s ease-out; }
+.motion-spring .cord { transition: height 0.7s cubic-bezier(0.3, 1.7, 0.5, 1); }
+.motion-spring .cord-bead { transition: top 0.7s cubic-bezier(0.3, 1.7, 0.5, 1); }
+.cord-hint { position: absolute; left: 44px; top: 104px; font: 0.8rem ui-monospace, monospace; color: #a99bb3; white-space: nowrap; }
+.login-form input { font-size: 16px; }
+.login-form { position: relative; z-index: 1; width: calc(100% - 2rem); margin-top: 1.5rem; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.5s ease, transform 0.5s ease, visibility 0s linear 0.5s; }
+.login-stage.lit .login-form { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+@media (prefers-reduced-motion: reduce) { .login-form, .login-stage, .lamp-beam, .cord, .cord-bead { transition: none !important; } }
 
 .search { margin-bottom: 0.5rem; }
 .products { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem; grid-template-columns: 1fr; }
