@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Modal from './Modal.jsx'
 import { useStore } from '../lib/store.jsx'
 import { cleanProduct } from '../lib/masterLogic'
+import { formatRupiah } from '../lib/format'
 
 let rowSeq = 0
 const newRow = () => ({ key: ++rowSeq, varian: '', warna: '', stock: '' })
@@ -13,10 +14,18 @@ export default function ProductDialog({ product, products, onClose, onSaved, onA
   const [sku, setSku] = useState(product?.sku ?? '')
   const [name, setName] = useState(product?.rawName ?? '')
   const [price, setPrice] = useState(product ? String(product.price) : '')
+  const [basePrice, setBasePrice] = useState(product?.basePrice != null ? String(product.basePrice) : '')
   const [active, setActive] = useState(product?.active ?? true)
   const [rows, setRows] = useState([newRow()])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  // Pratinjau per pcs: setoran pemilik 75% dari harga dasar; sisanya milik toko.
+  const sell = Number(price)
+  const base = basePrice === '' ? sell : Number(basePrice)
+  const margin = Number.isInteger(sell) && Number.isInteger(base) && sell >= 0 && base >= 0 && basePrice !== ''
+    ? { owner: base - Math.floor((base * 25 + 50) / 100), gap: sell - base, store: sell - (base - Math.floor((base * 25 + 50) / 100)) }
+    : null
 
   const totalStock = product ? product.variants.reduce((n, v) => n + v.stock, 0) : 0
 
@@ -33,7 +42,7 @@ export default function ProductDialog({ product, products, onClose, onSaved, onA
     if (busy) return
     setError('')
     try {
-      cleanProduct({ sku, name, price }) // validasi cepat sebelum menunggu server
+      cleanProduct({ sku, name, price, basePrice }) // validasi cepat sebelum menunggu server
     } catch (err) {
       setError(err.message)
       return
@@ -41,7 +50,7 @@ export default function ProductDialog({ product, products, onClose, onSaved, onA
     setBusy(true)
     try {
       if (editing) {
-        await api.updateProduct({ id: product.id, sku, name, price, is_active: active })
+        await api.updateProduct({ id: product.id, sku, name, price, basePrice, is_active: active })
         onSaved(`Produk "${name.trim()}" diperbarui`)
       } else {
         await api.createProduct({ sku, name, price, variants: rows })
@@ -84,6 +93,20 @@ export default function ProductDialog({ product, products, onClose, onSaved, onA
             onChange={(e) => setPrice(e.target.value)} required />
         </label>
 
+        {editing && (
+          <label>
+            Harga dasar pemilik (Rp, opsional)
+            <input type="number" inputMode="numeric" min="0" step="1" value={basePrice}
+              onChange={(e) => setBasePrice(e.target.value)} placeholder="Kosong = sama dengan harga jual" />
+          </label>
+        )}
+        {editing && margin && (
+          <p className="hint" role="status">
+            Setoran pemilik {formatRupiah(margin.owner)}/pcs (75% dari harga dasar), bagian toko {formatRupiah(margin.store)}/pcs
+            (25% dari harga dasar + selisih harga {formatRupiah(margin.gap)}).
+          </p>
+        )}
+
         {editing ? (
           <>
             <label className="check">
@@ -96,7 +119,7 @@ export default function ProductDialog({ product, products, onClose, onSaved, onA
                 Barang → Stok Barang → Ubah → Retur ke pemilik.
               </p>
             )}
-            <p className="muted">Harga baru tidak mengubah transaksi yang sudah tercatat.</p>
+            <p className="muted">Harga jual dan harga dasar baru tidak mengubah transaksi yang sudah tercatat.</p>
           </>
         ) : (
           <fieldset>

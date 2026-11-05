@@ -97,8 +97,8 @@ export default function Dashboard() {
 
       <div className="stats">
         <div className="card stat"><span>Penjualan</span><b>{formatRupiah(view.total)}</b><small>{view.transaksi} transaksi</small></div>
-        <div className="card stat"><span>Bagian 25%</span><b>{formatRupiah(view.b25)}</b></div>
-        <div className="card stat"><span>Bagian 75%</span><b>{formatRupiah(view.b75)}</b></div>
+        <div className="card stat"><span>Bagian toko</span><b>{formatRupiah(view.b25)}</b></div>
+        <div className="card stat"><span>Bagian 75% (pemilik)</span><b>{formatRupiah(view.b75)}</b></div>
         <div className="card stat">
           <span>Belum disetor (semua waktu)</span>
           <b>{formatRupiah(Math.max(bal.sisa, 0))}</b>
@@ -114,7 +114,7 @@ export default function Dashboard() {
         <div className="table-wrap">
           <table className="rekap">
             <thead>
-              <tr><th>Tanggal</th><th className="num">Penjualan</th><th className="num">Bagian 25%</th><th className="num">Bagian 75%</th><th>Setoran</th></tr>
+              <tr><th>Tanggal</th><th className="num">Penjualan</th><th className="num">Bagian toko</th><th className="num">Bagian 75%</th><th>Setoran</th></tr>
             </thead>
             <tbody>
               {view.rows.map((d) => (

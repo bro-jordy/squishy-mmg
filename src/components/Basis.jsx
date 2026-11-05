@@ -4,7 +4,8 @@ export default function Basis({ settings }) {
   return (
     <p className="hint" role="note">
       <b>Dasar hitung: omzet</b> (transaksi selesai dan pembayaran terkonfirmasi; void tidak ikut).
-      Bagian 25% = {pct}% dari omzet, Bagian 75% = sisanya. <b>Dasar ini belum dikonfirmasi</b>:
+      Bagian 75% (setoran pemilik) = {100 - Number(pct)}% dari <b>harga dasar</b> pemilik (sama dengan harga jual kecuali diisi di Master Barang).
+      Bagian toko = penjualan dikurangi setoran, jadi selisih harga jual di atas harga dasar milik toko. <b>Dasar ini belum dikonfirmasi</b>:
       kalau pembagian ternyata dari laba setelah modal/biaya, angka di sini perlu disesuaikan.
     </p>
   )

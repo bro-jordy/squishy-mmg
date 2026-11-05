@@ -132,9 +132,9 @@ test('exportRows: gabung varian per SKU+nama+harga, hanya yang lunas, ada baris 
   assert.deepEqual(rows.map((r) => [r.sku, r.qty, r.total, r.bagian_25, r.bagian_75]),
     [['A2', 2, 80000, 20000, 60000], ['A10', 3, 75000, 18750, 56250]])
   const csv = exportCsv(rows)
-  assert.ok(csv.startsWith('﻿SKU;Nama Barang;Qty Terjual;Harga;Total;25%;75%\r\n'))
-  assert.ok(csv.includes('A10;"Squishy ""Roti""";3;Rp 25.000;Rp 75.000;Rp 18.750;Rp 56.250'))
-  assert.ok(csv.includes(';TOTAL;5;;Rp 155.000;Rp 38.750;Rp 116.250'))
+  assert.ok(csv.startsWith('﻿SKU;Nama Barang;Qty Terjual;Harga Jual;Harga Dasar;Total;75% Pemilik;Untung Toko (25%+Selisih)\r\n'))
+  assert.ok(csv.includes('A10;"Squishy ""Roti""";3;Rp 25.000;Rp 25.000;Rp 75.000;Rp 56.250;Rp 18.750'))
+  assert.ok(csv.includes(';TOTAL;5;;;Rp 155.000;Rp 116.250;Rp 38.750'))
 })
 
 test('periodRange bulan lalu, termasuk pergantian tahun', async () => {
@@ -142,4 +142,61 @@ test('periodRange bulan lalu, termasuk pergantian tahun', async () => {
   assert.deepEqual(periodRange('bulanlalu', '2026-11-01'), { from: '2026-10-01', to: '2026-10-31' })
   assert.deepEqual(periodRange('bulanlalu', '2026-03-15'), { from: '2026-02-01', to: '2026-02-28' })
   assert.deepEqual(periodRange('bulanlalu', '2027-01-09'), { from: '2026-12-01', to: '2026-12-31' })
+})
+
+// ---- Harga dasar pemilik ------------------------------------------------------
+
+test('splitWithBase: setoran 75% dari harga dasar, selisih harga jual milik toko', async () => {
+  const { splitWithBase } = await import('./reportLogic.js')
+  // Vaseline: harga dasar 60rb dijual 100rb -> pemilik 45rb, toko 55rb (15rb + selisih 40rb)
+  assert.deepEqual(splitWithBase(100000, 60000), { bagian_25: 55000, bagian_75: 45000 })
+  // tanpa selisih = 25/75 biasa
+  assert.deepEqual(splitWithBase(120000, 120000), splitShare(120000))
+  assert.deepEqual(splitWithBase(35001, 35001), splitShare(35001))
+})
+
+test('dailySummary & exportRows memakai harga dasar; transaksi lama tanpa snapshot = 25/75 biasa', async () => {
+  const { exportRows, exportCsv } = await import('./reportLogic.js')
+  const item = (sku, name, qty, unit_price, base_unit_price) =>
+    ({ sku, product_name: name, variant_label: 'x', qty, unit_price, base_unit_price, line_total: qty * unit_price })
+  const sale = (sold_at, items) => ({
+    status: 'completed', payment_status: 'confirmed', sold_at,
+    total: items.reduce((n, i) => n + i.line_total, 0), sale_items: items,
+  })
+  const sales = [
+    sale('2026-11-05T03:00:00Z', [item('A1', 'Vaseline', 1, 100000, 60000)]),
+    sale('2026-11-05T04:00:00Z', [item('A2', 'Kiwi', 2, 40000, undefined)]), // data lama: tanpa snapshot
+  ]
+  const [day] = dailySummary(sales)
+  assert.equal(day.total_penjualan, 180000)
+  assert.equal(day.bagian_75, 45000 + 60000)
+  assert.equal(day.bagian_25, 55000 + 20000)
+  assert.equal(day.bagian_25 + day.bagian_75, day.total_penjualan)
+
+  const rows = exportRows(sales, 25)
+  const vas = rows.find((r) => r.sku === 'A1')
+  assert.deepEqual([vas.harga, vas.harga_dasar, vas.total, vas.bagian_25, vas.bagian_75, vas.selisih, vas.untung_toko],
+    [100000, 60000, 100000, 15000, 45000, 40000, 55000])
+  assert.ok(exportCsv(rows).includes('A1;Vaseline;1;Rp 100.000;Rp 60.000;Rp 100.000;Rp 45.000;Rp 55.000'))
+})
+
+test('CSV untuk pemilik: hanya harga dasar dan 75%, tanpa harga jual / untung toko', async () => {
+  const { exportRowsOwner, exportCsvOwner } = await import('./reportLogic.js')
+  const item = (sku, name, qty, unit_price, base_unit_price) =>
+    ({ sku, product_name: name, variant_label: 'x', qty, unit_price, base_unit_price, line_total: qty * unit_price })
+  const sale = (status, pay, items) => ({ status, payment_status: pay, sold_at: '2026-11-05T03:00:00Z', total: 0, sale_items: items })
+  const sales = [
+    sale('completed', 'confirmed', [item('A23', 'Vaseline', 1, 100000, 60000), item('A2', 'Kiwi', 2, 40000, undefined)]),
+    sale('completed', 'confirmed', [item('A23', 'Vaseline', 2, 90000, 60000)]), // harga jual beda, dasar sama: satu baris
+    sale('completed', 'unpaid', [item('A2', 'Kiwi', 9, 40000, undefined)]),
+    sale('void', 'confirmed', [item('A2', 'Kiwi', 9, 40000, undefined)]),
+  ]
+  const rows = exportRowsOwner(sales, 25)
+  assert.deepEqual(rows.map((r) => [r.sku, r.qty, r.harga, r.total, r.bagian_75]),
+    [['A2', 2, 40000, 80000, 60000], ['A23', 3, 60000, 180000, 135000]])
+  const csv = exportCsvOwner(rows)
+  assert.ok(csv.startsWith('\uFEFFSKU;Nama Barang;Qty Terjual;Harga;Total;75%\r\n'))
+  assert.ok(csv.includes('A23;Vaseline;3;Rp 60.000;Rp 180.000;Rp 135.000'))
+  assert.ok(csv.includes(';TOTAL;5;;Rp 260.000;Rp 195.000'))
+  assert.ok(!csv.includes('100.000') && !csv.includes('90.000') && !/Untung|Selisih|25%/.test(csv)) // tidak bocor harga jual / margin
 })

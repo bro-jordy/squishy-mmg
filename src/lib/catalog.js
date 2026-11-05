@@ -24,6 +24,7 @@ export function buildCatalog({ products, variants }) {
           ? (v.warna ?? 'Standar')
           : ([v.varian, v.warna].filter(Boolean).join(' · ') || 'Standar'),
         price: p.price,
+        base_price: p.base_price ?? null,
         stock: v.stock,
         is_sellable: p.is_active && v.is_active,
         product_name: p.name,
@@ -50,6 +51,7 @@ export function groupByProduct(rows) {
         name: r.display_name,
         rawName: r.product_name,
         price: r.price,
+        basePrice: r.base_price ?? null,
         active: r.product_active,
         variants: [],
       })

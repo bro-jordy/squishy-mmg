@@ -370,3 +370,6 @@ ol.plain { counter-reset: n; }
 .sale-actions-row > button.grow { flex: 2; }
 .sale-pay { width: 100%; }
 .receipt-dialog h2 { padding-right: 3rem; }
+
+.export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.export-actions button { width: 100%; min-height: 48px; padding-inline: 0.5rem; line-height: 1.2; }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useStore } from '../lib/store.jsx'
 import { formatDateJakarta, formatRupiah, todayJakarta } from '../lib/format'
 import { downloadCsv } from '../lib/csv'
-import { exportCsv, exportRows, settlementBalance } from '../lib/reportLogic'
+import { exportCsv, exportCsvOwner, exportRows, exportRowsOwner, settlementBalance } from '../lib/reportLogic'
 import PeriodPresets from '../components/PeriodPresets.jsx'
 import Basis from '../components/Basis.jsx'
 
@@ -20,7 +20,7 @@ export default function BagiHasil() {
   const [formError, setFormError] = useState('')
   const [notice, setNotice] = useState('')
   const [exp, setExp] = useState({ from: todayJakarta(), to: todayJakarta() })
-  const [expBusy, setExpBusy] = useState(false)
+  const [expBusy, setExpBusy] = useState('') // '' | 'toko' | 'pemilik'
   const [expError, setExpError] = useState('')
 
   const load = useCallback(async () => {
@@ -60,22 +60,26 @@ export default function BagiHasil() {
     setBusy(false)
   }
 
-  async function onExport() {
+  // jenis 'toko' = rekap lengkap untuk owner toko (ada harga dasar, selisih, untung toko);
+  // 'pemilik' = rekap untuk pemilik barang (hanya harga dasar dan 75%, tanpa untung toko).
+  async function onExport(kind) {
     if (expBusy || !exp.from || !exp.to || exp.from > exp.to) return
-    setExpBusy(true)
+    setExpBusy(kind)
     setExpError('')
     try {
       const sales = await api.fetchSales({ from: exp.from, to: exp.to })
-      const rows = exportRows(sales, settings?.pct_bagian_25)
+      const owner = kind === 'pemilik'
+      const rows = owner ? exportRowsOwner(sales, settings?.pct_bagian_25) : exportRows(sales, settings?.pct_bagian_25)
       if (rows.length === 0) {
         setExpError('Tidak ada penjualan lunas pada periode ini.')
       } else {
-        downloadCsv(`rekap-${store.kode}-${exp.from}${exp.from === exp.to ? '' : `_sd_${exp.to}`}.csv`, exportCsv(rows))
+        const period = `${exp.from}${exp.from === exp.to ? '' : `_sd_${exp.to}`}`
+        downloadCsv(`rekap-${owner ? 'pemilik' : 'toko'}-${store.kode}-${period}.csv`, owner ? exportCsvOwner(rows) : exportCsv(rows))
       }
     } catch {
       setExpError('Gagal menyiapkan export. Coba lagi.')
     }
-    setExpBusy(false)
+    setExpBusy('')
   }
 
   async function remove(s) {
@@ -106,7 +110,7 @@ export default function BagiHasil() {
           <b>{formatRupiah(days.reduce((n, d) => n + d.total_penjualan, 0))}</b>
           <small>{days.reduce((n, d) => n + d.transaksi, 0)} transaksi</small>
         </div>
-        <div className="card stat"><span>Total Bagian 75%</span><b>{formatRupiah(bal.total_bagian_75)}</b></div>
+        <div className="card stat"><span>Total Bagian 75% (pemilik)</span><b>{formatRupiah(bal.total_bagian_75)}</b></div>
         <div className="card stat"><span>Sudah disetor</span><b>{formatRupiah(bal.sudah_disetor)}</b></div>
         <div className="card stat">
           <span>{bal.sisa < 0 ? 'Kelebihan setor' : 'Sisa belum disetor'}</span>
@@ -114,23 +118,32 @@ export default function BagiHasil() {
           <small><span className={`badge sd-${bal.status}`}>{STATUS_LABEL[bal.status]}</span></small>
         </div>
         <div className="card stat">
-          <span>Total Bagian 25%</span>
+          <span>Total Bagian toko</span>
           <b>{formatRupiah(days.reduce((n, d) => n + d.bagian_25, 0))}</b>
         </div>
       </div>
 
       <h2>Export rekap</h2>
       <div className="card form">
-        <p className="muted">File CSV (buka di Excel/Sheets): SKU, Nama Barang, Qty Terjual, Harga, Total, 25%, 75%. Hanya penjualan lunas.</p>
+        <p className="muted">
+          File CSV (buka di Excel/Sheets), hanya penjualan lunas.<br />
+          <b>Untuk pemilik barang:</b> SKU, Nama Barang, Qty Terjual, Harga, Total, 75%. Harga = harga dasar, tanpa untung toko.<br />
+          <b>Untuk owner toko:</b> SKU, Nama Barang, Qty Terjual, Harga Jual, Harga Dasar, Total, 75% Pemilik, Untung Toko (25% + selisih).
+        </p>
         <PeriodPresets from={exp.from} to={exp.to} onPick={setExp} />
         <div className="filters">
           <label>Dari<input type="date" value={exp.from} max={exp.to} onChange={(e) => setExp((x) => ({ ...x, from: e.target.value }))} /></label>
           <label>Sampai<input type="date" value={exp.to} min={exp.from} onChange={(e) => setExp((x) => ({ ...x, to: e.target.value }))} /></label>
         </div>
         {expError && <p className="error" role="alert">{expError}</p>}
-        <button type="button" className="primary" disabled={expBusy || !exp.from || !exp.to || exp.from > exp.to} onClick={onExport}>
-          {expBusy ? 'Menyiapkan…' : 'Unduh CSV'}
-        </button>
+        <div className="export-actions">
+          <button type="button" className="primary" disabled={Boolean(expBusy) || !exp.from || !exp.to || exp.from > exp.to} onClick={() => onExport('pemilik')}>
+            {expBusy === 'pemilik' ? 'Menyiapkan…' : 'Unduh CSV untuk pemilik barang'}
+          </button>
+          <button type="button" disabled={Boolean(expBusy) || !exp.from || !exp.to || exp.from > exp.to} onClick={() => onExport('toko')}>
+            {expBusy === 'toko' ? 'Menyiapkan…' : 'Unduh CSV untuk owner toko'}
+          </button>
+        </div>
       </div>
 
       <h2>Catat setoran</h2>

@@ -25,8 +25,8 @@ export default function PengaturanUmum() {
       {!settings ? <p role="status">Memuat…</p> : (
         <dl className="kv">
           <dt>Toko</dt><dd>{settings.nama_toko}</dd>
-          <dt>Bagian 25%</dt><dd>{settings.pct_bagian_25}% dari dasar hitung</dd>
-          <dt>Bagian 75%</dt><dd>sisanya ({100 - Number(settings.pct_bagian_25)}%)</dd>
+          <dt>Bagian toko</dt><dd>{settings.pct_bagian_25}% dari harga dasar, ditambah selisih harga jual di atas harga dasar</dd>
+          <dt>Setoran pemilik</dt><dd>{100 - Number(settings.pct_bagian_25)}% dari harga dasar</dd>
           <dt>Dasar hitung</dt><dd>{settings.dasar_pembagian === 'omzet' ? 'Omzet (belum dikonfirmasi)' : settings.dasar_pembagian}</dd>
         </dl>
       )}

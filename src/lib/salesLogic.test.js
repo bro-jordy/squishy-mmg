@@ -268,3 +268,27 @@ test('filterByPaid: lunas vs belum lunas (belum bayar + belum dikonfirmasi), voi
   assert.equal(filterByPaid(st.sales, 'belum').length, 1)
   assert.equal(filterByPaid(st.sales, 'all').length, 3)
 })
+
+test('harga dasar: snapshot saat checkout, tidak ikut berubah; edit mempertahankan snapshot barang lama', () => {
+  const s0 = base()
+  const ungu = vid(s0, 'A12', 'Ungu')
+  const biru = vid(s0, 'A12', 'Biru')
+  const pid = s0.products.find((x) => x.sku === 'A12').id
+  const withBase = (st, basePrice) => updateProduct(st, { id: pid, sku: 'A12', name: s0.products.find((x) => x.id === pid).name, price: 35000, basePrice })
+  // tanpa harga dasar: snapshot = harga jual
+  assert.equal(buy(s0, [{ variantId: ungu, qty: 1 }]).state.sales[0].sale_items[0].base_unit_price, 35000)
+  // harga dasar 20.000: harga jual tetap 35.000
+  const s1 = withBase(s0, 20000)
+  const r = buy(s1, [{ variantId: ungu, qty: 2 }])
+  const it = r.state.sales[0].sale_items[0]
+  assert.deepEqual([it.unit_price, it.base_unit_price, r.state.sales[0].total], [35000, 20000, 70000])
+  // harga dasar berubah lagi: transaksi lama tetap
+  const s2 = withBase(r.state, 10000)
+  assert.equal(s2.sales[0].sale_items[0].base_unit_price, 20000)
+  // edit: barang lama pertahankan snapshot, barang baru ikut harga dasar produk saat ini
+  const e = editSale(s2, { saleId: r.saleId, paymentMethod: 'cash', reason: 'tes', items: [
+    { variantId: ungu, qty: 1, unitPrice: 40000 }, { variantId: biru, qty: 1, unitPrice: 35000 }] }, NOW)
+  const items = new Map(e.state.sales[0].sale_items.map((i) => [i.variant_id, i]))
+  assert.equal(items.get(ungu).base_unit_price, 20000)
+  assert.equal(items.get(biru).base_unit_price, 10000)
+})

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { addVariant, createProduct, normText, updateProduct, updateVariant, InputError } from './masterLogic.js'
 import { adjust, initState, stockMap, stockOf } from './stockLogic.js'
 import { buildCatalog } from './catalog.js'
+import { cleanProduct } from './masterLogic.js'
 
 const seed = JSON.parse(readFileSync(new URL('../data/local-seed.json', import.meta.url), 'utf8'))
 const base = () => initState(seed, new Date('2026-10-17T00:00:00Z'))
@@ -122,4 +123,17 @@ test('katalog: produk baru muncul dengan aturan tampilan yang sama', () => {
   const rows = catalog(state).filter((r) => r.sku === 'Z9')
   assert.equal(rows[0].display_name, 'Squishy Tes · Maltose')
   assert.deepEqual(rows.map((r) => r.variant_label).sort(), ['Biru', 'Pink'])
+})
+
+test('harga dasar opsional: kosong = null, harus bilangan bulat >= 0, tersimpan lewat updateProduct', () => {
+  assert.equal(cleanProduct({ sku: 'A', name: 'B', price: 100000 }).base_price, null)
+  assert.equal(cleanProduct({ sku: 'A', name: 'B', price: 100000, basePrice: '' }).base_price, null)
+  assert.equal(cleanProduct({ sku: 'A', name: 'B', price: 100000, basePrice: '60000' }).base_price, 60000)
+  assert.throws(() => cleanProduct({ sku: 'A', name: 'B', price: 1, basePrice: '-1' }), InputError)
+  assert.throws(() => cleanProduct({ sku: 'A', name: 'B', price: 1, basePrice: '1.5' }), InputError)
+  const s = base()
+  const p = s.products[0]
+  const r = updateProduct(s, { id: p.id, sku: p.sku, name: p.name, price: 100000, basePrice: 60000 })
+  assert.equal(r.products.find((x) => x.id === p.id).base_price, 60000)
+  assert.equal(catalog(r).find((x) => x.product_id === p.id).base_price, 60000)
 })

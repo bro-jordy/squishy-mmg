@@ -144,7 +144,7 @@ export function createApi({ store, user, role, isPlatformOwner = false }) {
       }
       const { data, error } = await supabase
         .from('v_catalog')
-        .select('variant_id, product_id, sku, display_name, variant_label, price, stock, is_sellable, ' +
+        .select('variant_id, product_id, sku, display_name, variant_label, price, base_price, stock, is_sellable, ' +
           'product_name, varian, warna, product_active, variant_active')
         .eq('store_id', storeId)
       if (error) throw error
@@ -242,11 +242,11 @@ export function createApi({ store, user, role, isPlatformOwner = false }) {
       return data
     },
 
-    async updateProduct({ id, sku, name, price, is_active }) {
-      const fields = master.cleanProduct({ sku, name, price })
+    async updateProduct({ id, sku, name, price, basePrice, is_active }) {
+      const fields = master.cleanProduct({ sku, name, price, basePrice })
       if (LOCAL_MODE) {
         needAdmin('mengubah barang')
-        await mutateLocal(storeId, (s) => master.updateProduct(s, { id, ...fields, is_active }))
+        await mutateLocal(storeId, (s) => master.updateProduct(s, { id, ...fields, basePrice: fields.base_price, is_active }))
         return
       }
       const { data, error } = await supabase
@@ -542,7 +542,7 @@ export function createApi({ store, user, role, isPlatformOwner = false }) {
 const SALE_COLUMNS =
   'id, sale_no, sold_at, customer_name, payment_method, payment_status, status, total, note, ' +
   'void_reason, voided_at, voided_by_name, cashier_name, edited_at, ' +
-  'sale_items(id, variant_id, qty, unit_price, line_total, sku, product_name, variant_label)'
+  'sale_items(id, variant_id, qty, unit_price, base_unit_price, line_total, sku, product_name, variant_label)'
 
 export function resetLocalData() {
   clearState()

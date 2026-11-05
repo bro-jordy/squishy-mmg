@@ -17,20 +17,33 @@ export function splitShare(total, pct = DEFAULT_PCT) {
   return { bagian_25: a, bagian_75: total - a }
 }
 
+// Harga dasar (dari pemilik) bisa lebih rendah dari harga jual. Setoran pemilik (Bagian 75%) dihitung
+// dari harga dasar; Bagian 25% (bagian toko) = penjualan - setoran, jadi selisih harga jual di atas
+// harga dasar seluruhnya milik toko. Tanpa selisih (dasar = total) hasilnya sama dengan splitShare.
+export function splitWithBase(total, dasar, pct = DEFAULT_PCT) {
+  const { bagian_75 } = splitShare(dasar, pct)
+  return { bagian_25: total - bagian_75, bagian_75 }
+}
+
+// Harga dasar satu item; transaksi lama (tanpa snapshot) dianggap sama dengan harga jual.
+export const baseOf = (it) => it.base_unit_price ?? it.unit_price
+const baseTotal = (s) => s.sale_items.reduce((n, it) => n + it.qty * baseOf(it), 0)
+
 // Rekap per hari Jakarta, urut tanggal naik.
 export function dailySummary(sales, pct = DEFAULT_PCT) {
   const days = new Map()
   for (const s of sales) {
     if (!counts(s)) continue
     const day = jakartaDateKey(s.sold_at)
-    const d = days.get(day) ?? { day, transaksi: 0, total_penjualan: 0 }
+    const d = days.get(day) ?? { day, transaksi: 0, total_penjualan: 0, total_dasar: 0 }
     d.transaksi += 1
     d.total_penjualan += s.total
+    d.total_dasar += baseTotal(s)
     days.set(day, d)
   }
   return [...days.values()]
     .sort((a, b) => (a.day < b.day ? -1 : 1))
-    .map((d) => ({ ...d, ...splitShare(d.total_penjualan, pct) }))
+    .map(({ total_dasar, ...d }) => ({ ...d, ...splitWithBase(d.total_penjualan, total_dasar, pct) }))
 }
 
 // Setoran dialokasikan ke hari terlama dulu (asumsi; aturan setoran belum dikonfirmasi).
@@ -67,26 +80,29 @@ export function topProducts(sales, limit = 5) {
   return [...map.values()].sort((a, b) => b.qty - a.qty || b.revenue - a.revenue).slice(0, limit)
 }
 
-// Rekap export per SKU: SKU, Nama Barang, Qty Terjual, Harga, Total, 25%, 75%.
-// Hanya transaksi selesai & terkonfirmasi (sama dengan rekap lain). Baris = SKU + nama + harga
-// satuan (varian digabung; harga beda = baris beda). Bagian 25% dibulatkan per baris.
+// Rekap export per SKU. Hanya transaksi selesai & terkonfirmasi (sama dengan rekap lain).
+// Baris = SKU + nama + harga jual + harga dasar (varian digabung; harga beda = baris beda).
+// Untung Toko = 25% dari harga dasar (dibulatkan per baris) + selisih (harga jual - dasar) x qty.
+// 75% Pemilik = setoran dari harga dasar. Total = 75% Pemilik + Untung Toko.
 export function exportRows(sales, pct = DEFAULT_PCT) {
   const map = new Map()
   for (const s of sales) {
     if (!counts(s)) continue
     for (const it of s.sale_items) {
-      const key = `${it.sku}|${it.product_name}|${it.unit_price}`
-      const r = map.get(key) ?? { sku: it.sku, nama: it.product_name, qty: 0, harga: it.unit_price, total: 0 }
+      const key = `${it.sku}|${it.product_name}|${it.unit_price}|${baseOf(it)}`
+      const r = map.get(key) ?? { sku: it.sku, nama: it.product_name, qty: 0, harga: it.unit_price, harga_dasar: baseOf(it), total: 0, dasar: 0 }
       r.qty += it.qty
       r.total += it.line_total
+      r.dasar += it.qty * baseOf(it)
       map.set(key, r)
     }
   }
   return [...map.values()]
     .sort((a, b) => a.sku.localeCompare(b.sku, 'en', { numeric: true }) || a.nama.localeCompare(b.nama) || a.harga - b.harga)
-    .map((r) => {
-      const { bagian_25, bagian_75 } = splitShare(r.total, pct)
-      return { ...r, bagian_25, bagian_75 }
+    .map(({ dasar, ...r }) => {
+      const { bagian_25, bagian_75 } = splitShare(dasar, pct)
+      const selisih = r.total - dasar
+      return { ...r, bagian_25, bagian_75, selisih, untung_toko: bagian_25 + selisih }
     })
 }
 
@@ -99,10 +115,49 @@ export function exportCsv(rows) {
   const sum = (k) => rows.reduce((n, r) => n + r[k], 0)
   const n = (v) => String(v).replace(/\B(?=(\d{3})+(?!\d))/g, '.') // pemisah ribuan: 1.234.000
   const rp = (v) => `Rp ${n(v)}`
-  const lines = [['SKU', 'Nama Barang', 'Qty Terjual', 'Harga', 'Total', '25%', '75%']]
-  for (const r of rows) lines.push([r.sku, r.nama, n(r.qty), rp(r.harga), rp(r.total), rp(r.bagian_25), rp(r.bagian_75)])
-  lines.push(['', 'TOTAL', n(sum('qty')), '', rp(sum('total')), rp(sum('bagian_25')), rp(sum('bagian_75'))])
+  // Rekap owner toko: Total = 75% Pemilik + Untung Toko (25% harga dasar + selisih harga jual).
+  const lines = [['SKU', 'Nama Barang', 'Qty Terjual', 'Harga Jual', 'Harga Dasar', 'Total', '75% Pemilik', 'Untung Toko (25%+Selisih)']]
+  for (const r of rows) {
+    lines.push([r.sku, r.nama, n(r.qty), rp(r.harga), rp(r.harga_dasar), rp(r.total), rp(r.bagian_75), rp(r.untung_toko)])
+  }
+  lines.push(['', 'TOTAL', n(sum('qty')), '', '', rp(sum('total')), rp(sum('bagian_75')), rp(sum('untung_toko'))])
   return `\uFEFF${lines.map((l) => l.map(esc).join(';')).join('\r\n')}\r\n`
+}
+
+// Rekap untuk PEMILIK BARANG: hanya harga dasar (bukan harga jual), tanpa untung toko.
+// Kolom: SKU, Nama Barang, Qty Terjual, Harga (= harga dasar), Total (= qty x harga dasar), 75%.
+// Baris = SKU + nama + harga dasar (varian digabung). 75% dihitung dari Total dasar, dibulatkan per baris.
+export function exportRowsOwner(sales, pct = DEFAULT_PCT) {
+  const map = new Map()
+  for (const s of sales) {
+    if (!counts(s)) continue
+    for (const it of s.sale_items) {
+      const base = baseOf(it)
+      const key = `${it.sku}|${it.product_name}|${base}`
+      const r = map.get(key) ?? { sku: it.sku, nama: it.product_name, qty: 0, harga: base, total: 0 }
+      r.qty += it.qty
+      r.total += it.qty * base
+      map.set(key, r)
+    }
+  }
+  return [...map.values()]
+    .sort((a, b) => a.sku.localeCompare(b.sku, 'en', { numeric: true }) || a.nama.localeCompare(b.nama) || a.harga - b.harga)
+    .map((r) => ({ ...r, bagian_75: splitShare(r.total, pct).bagian_75 }))
+}
+
+const csvCell = (v) => {
+  const t = String(v)
+  return /[";\n\r]/.test(t) ? `"${t.replaceAll('"', '""')}"` : t
+}
+const csvNum = (v) => String(v).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+export function exportCsvOwner(rows) {
+  const sum = (k) => rows.reduce((n, r) => n + r[k], 0)
+  const rp = (v) => `Rp ${csvNum(v)}`
+  const lines = [['SKU', 'Nama Barang', 'Qty Terjual', 'Harga', 'Total', '75%']]
+  for (const r of rows) lines.push([r.sku, r.nama, csvNum(r.qty), rp(r.harga), rp(r.total), rp(r.bagian_75)])
+  lines.push(['', 'TOTAL', csvNum(sum('qty')), '', rp(sum('total')), rp(sum('bagian_75'))])
+  return `\uFEFF${lines.map((l) => l.map(csvCell).join(';')).join('\r\n')}\r\n`
 }
 
 const addDays = (key, n) => {

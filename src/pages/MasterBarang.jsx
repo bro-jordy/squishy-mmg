@@ -73,7 +73,7 @@ export default function MasterBarang() {
               <span className="price">{formatRupiah(p.price)}</span>
             </div>
             <div className="product-head">
-              <span className="sku">SKU {p.sku}</span>
+              <span className="sku">SKU {p.sku}{isAdmin && p.basePrice != null && p.basePrice !== p.price && <> · harga dasar {formatRupiah(p.basePrice)}</>}</span>
               {isAdmin && (
                 <button type="button" className="small" aria-label={`Ubah produk ${p.name}`}
                   onClick={() => { setNotice(''); setDialog({ type: 'product', product: p }) }}>

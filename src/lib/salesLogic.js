@@ -45,7 +45,7 @@ export function checkout(state, input, now = new Date()) {
       throw new SaleError(`Stok tidak cukup: ${p.name} (${label}): sisa ${have}, diminta ${qty}`)
     }
     lines.push({
-      variant_id: variantId, qty, unit_price: p.price, line_total: qty * p.price,
+      variant_id: variantId, qty, unit_price: p.price, base_unit_price: p.base_price ?? p.price, line_total: qty * p.price,
       sku: p.sku, product_name: p.name, variant_label: label,
     })
     total += qty * p.price
@@ -161,6 +161,8 @@ export function editSale(state, { saleId, paymentMethod, paymentConfirmed, items
     if (delta !== 0) deltas.push({ variantId: it.variantId, delta })
     lines.push({
       variant_id: it.variantId, qty: it.qty, unit_price: it.unitPrice, line_total: it.qty * it.unitPrice,
+      // barang lama pertahankan snapshot harga dasar; barang baru ikut harga dasar produk saat ini
+      base_unit_price: old ? (old.base_unit_price ?? old.unit_price) : (p.base_price ?? p.price),
       sku: old?.sku ?? p.sku, product_name: old?.product_name ?? p.name, variant_label: old?.variant_label ?? label,
     })
   }

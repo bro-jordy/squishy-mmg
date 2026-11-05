@@ -18,13 +18,16 @@ function toInt(value) {
   return Number(value)
 }
 
-export function cleanProduct({ sku, name, price }) {
+// Harga dasar (dari pemilik) opsional: kosong = sama dengan harga jual (pembagian 25/75 biasa).
+export function cleanProduct({ sku, name, price, basePrice = null }) {
   const cleanSku = String(sku ?? '').trim()
   const cleanName = String(name ?? '').trim()
   if (!cleanSku || !cleanName) throw new InputError('SKU dan nama wajib diisi')
   const p = toInt(price)
   if (!Number.isInteger(p) || p < 0) throw new InputError('Harga harus bilangan bulat ≥ 0')
-  return { sku: cleanSku, name: cleanName, price: p }
+  const b = basePrice === '' || basePrice === null || basePrice === undefined ? null : Number(basePrice)
+  if (b !== null && (!Number.isInteger(b) || b < 0)) throw new InputError('Harga dasar harus bilangan bulat ≥ 0')
+  return { sku: cleanSku, name: cleanName, price: p, base_price: b }
 }
 
 const variantKey = (v) => `${(v.varian ?? '').toLowerCase()}|${(v.warna ?? '').toLowerCase()}`
@@ -125,10 +128,10 @@ export function addVariant(state, { productId, varian, warna, stock = 0 }, now =
   }
 }
 
-export function updateProduct(state, { id, sku, name, price, is_active }) {
+export function updateProduct(state, { id, sku, name, price, basePrice, is_active }) {
   const current = state.products.find((p) => p.id === id)
   if (!current) throw new InputError('Produk tidak ditemukan')
-  const fields = cleanProduct({ sku, name, price })
+  const fields = cleanProduct({ sku, name, price, basePrice })
   assertProductFree(state, fields, id)
   return {
     ...state,

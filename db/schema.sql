@@ -111,7 +111,8 @@ create table products (
   store_id     uuid not null references stores(id) on delete restrict,
   sku          text not null check (sku = btrim(sku) and sku <> ''),
   name         text not null check (name = btrim(name) and name <> ''),
-  price        integer not null check (price >= 0),          -- Rupiah, satu harga per produk
+  price        integer not null check (price >= 0),          -- Rupiah, harga jual (satu harga per produk)
+  base_price   integer check (base_price >= 0),               -- Harga dasar dari pemilik; NULL = sama dengan harga jual
   description  text,
   image_url    text,
   is_active    boolean not null default true,
@@ -194,6 +195,7 @@ create table sale_items (
   variant_id    uuid not null,
   qty           integer not null check (qty > 0),
   unit_price    integer not null check (unit_price >= 0),
+  base_unit_price integer not null check (base_unit_price >= 0),  -- snapshot harga dasar pemilik saat transaksi
   line_total    integer not null,
   sku           text not null,
   product_name  text not null,
@@ -372,7 +374,7 @@ begin
   -- Varian dari toko lain tidak ikut (v.store_id = p_store_id) → dianggap tidak ditemukan.
   for r in
     select v.id as variant_id, v.stock, v.is_active as v_active, v.varian, v.warna,
-           p.is_active as p_active, p.price, p.name, p.sku, i.qty
+           p.is_active as p_active, p.price, coalesce(p.base_price, p.price) as base_price, p.name, p.sku, i.qty
     from (select (e->>'variant_id')::uuid as variant_id,
                  sum((e->>'qty')::integer)::integer as qty
           from jsonb_array_elements(p_items) e
@@ -393,9 +395,9 @@ begin
         using errcode = 'P0001';
     end if;
 
-    insert into sale_items (store_id, sale_id, variant_id, qty, unit_price, line_total,
+    insert into sale_items (store_id, sale_id, variant_id, qty, unit_price, base_unit_price, line_total,
                             sku, product_name, variant_label)
-    values (p_store_id, v_sale_id, r.variant_id, r.qty, r.price, r.qty * r.price,
+    values (p_store_id, v_sale_id, r.variant_id, r.qty, r.price, r.base_price, r.qty * r.price,
             r.sku, r.name, v_label);
 
     insert into stock_movements (store_id, variant_id, movement_type, qty_delta, reason, sale_id)
@@ -804,7 +806,8 @@ select v.id                                   as variant_id,
        v.varian,
        v.warna,
        p.is_active                            as product_active,
-       v.is_active                            as variant_active
+       v.is_active                            as variant_active,
+       p.base_price
 from product_variants v
 join products p on p.id = v.product_id
 cross join lateral (
@@ -818,16 +821,25 @@ cross join lateral (
 -- pembayaran terkonfirmasi. BELUM FINAL: tergantung konfirmasi omzet vs laba
 -- (stores.dasar_pembagian). Persen Bagian 25% = stores.pct_bagian_25.
 create view v_daily_summary with (security_invoker = true) as
-select s.store_id,
-       (s.sold_at at time zone 'Asia/Jakarta')::date                 as day,
-       count(*)::integer                                             as transaksi,
-       sum(s.total)::integer                                         as total_penjualan,
-       ((sum(s.total) * st.pct_bagian_25 + 50) / 100)::integer       as bagian_25,
-       (sum(s.total) - ((sum(s.total) * st.pct_bagian_25 + 50) / 100))::integer as bagian_75
-from sales s
-join stores st on st.id = s.store_id
-where s.status = 'completed' and s.payment_status = 'confirmed'
-group by s.store_id, 2, st.pct_bagian_25;
+with per_day as (
+  select s.store_id,
+         (s.sold_at at time zone 'Asia/Jakarta')::date as day,
+         count(*)::integer                              as transaksi,
+         sum(s.total)::integer                          as total_penjualan,
+         sum(d.dasar)::integer                          as total_dasar
+  from sales s
+  cross join lateral (select coalesce(sum(i.qty * i.base_unit_price), 0) as dasar
+                      from sale_items i where i.sale_id = s.id) d
+  where s.status = 'completed' and s.payment_status = 'confirmed'
+  group by s.store_id, 2
+)
+-- Bagian 75% (setoran pemilik) dihitung dari HARGA DASAR; Bagian 25% (bagian toko) = penjualan - setoran,
+-- jadi selisih harga jual di atas harga dasar seluruhnya milik toko. Tanpa selisih hasilnya sama dengan 25/75 biasa.
+select p.store_id, p.day, p.transaksi, p.total_penjualan,
+       (p.total_penjualan - (p.total_dasar - ((p.total_dasar * st.pct_bagian_25 + 50) / 100)))::integer as bagian_25,
+       (p.total_dasar - ((p.total_dasar * st.pct_bagian_25 + 50) / 100))::integer                       as bagian_75
+from per_day p
+join stores st on st.id = p.store_id;
 
 -- Saldo setoran Bagian 75% per toko (admin toko saja).
 create view v_settlement_balance with (security_invoker = true) as
@@ -860,7 +872,7 @@ grant select on profiles, stores, store_members, products, product_variants,
 
 -- Master barang: admin toko boleh ubah, TAPI bukan kolom stok maupun toko.
 -- Barang/varian baru dibuat lewat create_product() / add_variant().
-grant update (sku, name, price, description, image_url, is_active) on products to authenticated;
+grant update (sku, name, price, base_price, description, image_url, is_active) on products to authenticated;
 grant update (varian, warna, is_active)                            on product_variants to authenticated;
 grant insert (store_id, settled_on, amount, share, recipient, period_start, period_end, note)
   on settlements to authenticated;
@@ -989,6 +1001,7 @@ language plpgsql security definer set search_path = public, pg_temp as $$
 declare
   s          sales%rowtype;
   v_before   jsonb;
+  v_base     jsonb;   -- {variant_id: harga dasar} snapshot lama
   v_after    jsonb;
   v_total    integer := 0;
   v_confirmed boolean;
@@ -1032,6 +1045,8 @@ begin
              'variant_label', i.variant_label, 'qty', i.qty, 'unit_price', i.unit_price)
              order by i.product_name, i.variant_label), '[]'::jsonb))
     into v_before from sale_items i where i.sale_id = p_sale_id;
+  select coalesce(jsonb_object_agg(i.variant_id::text, i.base_unit_price), '{}'::jsonb)
+    into v_base from sale_items i where i.sale_id = p_sale_id;
 
   perform set_config('app.sale_edit', 'on', true);
 
@@ -1074,9 +1089,11 @@ begin
 
   -- Ganti isi transaksi: snapshot lama (v_before) dipertahankan untuk barang yang sudah ada.
   delete from sale_items where sale_id = p_sale_id;
-  insert into sale_items (store_id, sale_id, variant_id, qty, unit_price, line_total,
+  -- Harga dasar: barang yang sudah ada mempertahankan snapshot lama; barang baru pakai harga dasar produk.
+  insert into sale_items (store_id, sale_id, variant_id, qty, unit_price, base_unit_price, line_total,
                           sku, product_name, variant_label)
   select s.store_id, p_sale_id, v.id, (e->>'qty')::integer, (e->>'unit_price')::integer,
+         coalesce((v_base->>(v.id::text))::integer, p.base_price, p.price),
          (e->>'qty')::integer * (e->>'unit_price')::integer,
          coalesce(o->>'sku', p.sku), coalesce(o->>'product_name', p.name),
          coalesce(o->>'variant_label', coalesce(nullif(concat_ws(' · ', v.varian, v.warna), ''), 'Standar'))
